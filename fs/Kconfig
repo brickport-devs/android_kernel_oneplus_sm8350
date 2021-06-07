@@ -15,6 +15,10 @@ config VALIDATE_FS_PARSER
 	  Enable this to perform validation of the parameter description for a
 	  filesystem when it is registered.
 
+config FS_HPB
+	bool "Support HPB on Filesystem"
+	default y
+
 if BLOCK
 
 config FS_IOMAP

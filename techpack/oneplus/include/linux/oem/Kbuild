@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+header-y += boot_mode.h
+header-y += project_info.h

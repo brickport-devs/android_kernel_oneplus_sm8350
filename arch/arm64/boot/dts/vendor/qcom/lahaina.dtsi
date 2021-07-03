@@ -5243,6 +5243,9 @@
 		qcom,spcom-soc2sp-rmb-sp-ssr-bit = <0>;
 		qcom,boot-enabled;
 		status = "ok";
+
+		vreg_sp-supply = <&spss_vreg>;
+		gpio_sp-supply = <&spss_gpio_vreg>;
 	};
 
 	spss_utils: qcom,spss_utils {
@@ -5368,6 +5371,7 @@
 		reg-names = "smmu_iova_ipa", "tcs_cmd";
 		wlan-en-gpio = <&tlmm 64 0>;
 		qcom,bt-en-gpio = <&tlmm 65 0>;
+		qcom,sw-ctrl-gpio = <&tlmm 153 0>;
 		pinctrl-names = "wlan_en_active", "wlan_en_sleep";
 		pinctrl-0 = <&cnss_wlan_en_active>;
 		pinctrl-1 = <&cnss_wlan_en_sleep>;
@@ -5378,6 +5382,7 @@
 		qcom,tcs_offset_int_pow_amp_vreg = <0x4D0>;
 		use-pm-domain;
 		cnss-enable-self-recovery;
+		qcom,same-dt-multi-dev;
 
 		vdd-wlan-aon-supply = <&S2E>;
 		qcom,vdd-wlan-aon-config = <950000 952000 0 0 1>;

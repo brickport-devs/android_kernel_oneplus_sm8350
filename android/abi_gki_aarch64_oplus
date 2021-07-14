@@ -4,6 +4,7 @@
   __arch_copy_from_user
   __arch_copy_to_user
   arm64_const_caps_ready
+  bcmp
   __cfi_slowpath
   __check_object_size
   __class_create
@@ -59,6 +60,7 @@
   single_release
   snprintf
   sprintf
+  stpcpy
   sscanf
   __stack_chk_fail
   __stack_chk_guard

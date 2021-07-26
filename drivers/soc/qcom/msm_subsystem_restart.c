@@ -31,6 +31,7 @@
 #include <linux/of.h>
 #include <asm/current.h>
 #include <linux/timer.h>
+#include <linux/soc/qcom/battery_charger.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/trace_msm_ssr_event.h>
@@ -632,11 +633,35 @@ static void notify_each_subsys_device(struct subsys_device **list,
 	}
 }
 
+static void (*oplus_notify_event)(enum oplus_subsys_notify_event);
+void oplus_subsys_set_notifier(void (*notify)(enum oplus_subsys_notify_event))
+{
+	oplus_notify_event = notify;
+}
+EXPORT_SYMBOL(oplus_subsys_set_notifier);
+
+int oplus_subsys_notify_event(enum oplus_subsys_notify_event event)
+{
+	int ret = 0;
+
+	if (oplus_notify_event)
+		oplus_notify_event(event);
+	else
+		ret = -ENODEV;
+
+	return ret;
+}
+EXPORT_SYMBOL(oplus_subsys_notify_event);
+
 static int subsystem_shutdown(struct subsys_device *dev, void *data)
 {
 	const char *name = dev->desc->name;
 	int ret;
 
+	if (!strcmp(name, "adsp")) {
+		oplus_subsys_notify_event(SUBSYS_EVENT_ADSP_CRASH);
+		pr_info("ADSP crash, notify charger\n");
+	}
 	pr_info("[%s:%d]: Shutting down %s\n",
 			current->comm, current->pid, name);
 	ret = dev->desc->shutdown(dev->desc, true);
@@ -998,6 +1023,10 @@ static void subsystem_restart_wq_func(struct work_struct *work)
 	if (ret)
 		goto err;
 	notify_each_subsys_device(list, count, SUBSYS_AFTER_POWERUP, NULL);
+	if (!strcmp(desc->name, "adsp")) {
+		oplus_subsys_notify_event(SUBSYS_EVENT_ADSP_RECOVER);
+		pr_info("ADSP recover, notify charger\n");
+	}
 
 	pr_info("[%s:%d]: Restart sequence for %s completed.\n",
 			current->comm, current->pid, desc->name);

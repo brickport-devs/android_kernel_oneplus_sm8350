@@ -194,7 +194,7 @@ int backlight_device_set_brightness(struct backlight_device *bd,
 	}
 	mutex_unlock(&bd->ops_lock);
 
-	backlight_generate_event(bd, BACKLIGHT_UPDATE_SYSFS);
+	// backlight_generate_event(bd, BACKLIGHT_UPDATE_SYSFS);
 
 	return rc;
 }
@@ -331,7 +331,7 @@ void backlight_force_update(struct backlight_device *bd,
 	if (bd->ops && bd->ops->get_brightness)
 		bd->props.brightness = bd->ops->get_brightness(bd);
 	mutex_unlock(&bd->ops_lock);
-	backlight_generate_event(bd, reason);
+	// backlight_generate_event(bd, reason);
 }
 EXPORT_SYMBOL(backlight_force_update);
 

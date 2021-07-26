@@ -112,6 +112,28 @@ struct geni_se_device {
 #define HW_VER_MINOR_SHFT 16
 #define HW_VER_STEP_MASK GENMASK(15, 0)
 
+struct oemconsole {
+	bool default_console;
+	bool console_initialized;
+};
+
+static struct oemconsole oem_console  = {
+	.default_console       = false,
+	.console_initialized   = false,
+};
+
+static int __init parse_console_config(char *str)
+{
+	pr_err("%s: *akash\n", __func__);
+	if (str == NULL)
+		return 0;
+	if (!strcmp(str, "ttyMSM0,115200n8"))
+		oem_console.default_console = true;
+
+	return 0;
+}
+early_param("console", parse_console_config);
+
 /**
  * geni_read_reg_nolog() - Helper function to read from a GENI register
  * @base:	Base address of the serial engine's register block.
@@ -1767,22 +1789,24 @@ static int geni_se_probe(struct platform_device *pdev)
 	 * console UART as dummy consumer of ICC to get rid of this HACK
 	 */
 #if IS_ENABLED(CONFIG_SERIAL_MSM_GENI_CONSOLE)
-	geni_se_dev->wrapper_rsc.wrapper_dev = dev;
-	geni_se_dev->wrapper_rsc.ctrl_dev = dev;
+	if (oem_console.default_console) {
+		geni_se_dev->wrapper_rsc.wrapper_dev = dev;
+		geni_se_dev->wrapper_rsc.ctrl_dev = dev;
 
-	ret = geni_se_resources_init(&geni_se_dev->wrapper_rsc,
-					UART_CONSOLE_CORE2X_VOTE,
-					(DEFAULT_SE_CLK * DEFAULT_BUS_WIDTH));
-	if (ret) {
-		dev_err(dev, "Resources init failed: %d\n", ret);
-		return ret;
-	}
+		ret = geni_se_resources_init(&geni_se_dev->wrapper_rsc,
+						UART_CONSOLE_CORE2X_VOTE,
+						(DEFAULT_SE_CLK * DEFAULT_BUS_WIDTH));
+		if (ret) {
+			dev_err(dev, "Resources init failed: %d\n", ret);
+			return ret;
+		}
 
-	ret = geni_se_add_ab_ib(geni_se_dev, &geni_se_dev->wrapper_rsc);
-	if (ret) {
-		dev_err(dev, "%s: Error %d during bus_bw_update\n", __func__,
-				ret);
-		return ret;
+		ret = geni_se_add_ab_ib(geni_se_dev, &geni_se_dev->wrapper_rsc);
+		if (ret) {
+			dev_err(dev, "%s: Error %d during bus_bw_update\n", __func__,
+					ret);
+			return ret;
+		}
 	}
 #endif
 

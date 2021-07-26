@@ -3319,6 +3319,61 @@ static void sde_cp_notify_hist_event(struct drm_crtc *crtc_drm, void *arg)
 		return;
 	}
 
+	spin_lock_irqsave(&crtc->spin_lock, flags);
+	node = _sde_cp_get_intr_node(DRM_EVENT_HISTOGRAM, crtc);
+
+	if (!node) {
+		spin_unlock_irqrestore(&crtc->spin_lock, flags);
+		DRM_DEBUG_DRIVER("cannot find histogram event node in crtc\n");
+		ret = pm_runtime_get_sync(kms->dev->dev);
+		if (ret < 0) {
+			SDE_ERROR("failed to enable power resource %d\n", ret);
+			SDE_EVT32(ret, SDE_EVTLOG_ERROR);
+			return;
+		}
+		for (i = 0; i < crtc->num_mixers; i++) {
+			hw_dspp = crtc->mixers[i].hw_dspp;
+			if (hw_dspp && hw_dspp->ops.lock_histogram)
+				hw_dspp->ops.lock_histogram(hw_dspp,
+						&lock_hist);
+		}
+		pm_runtime_put_sync(kms->dev->dev);
+		return;
+	}
+
+	irq_idx = *(int *)arg;
+	spin_lock_irqsave(&node->state_lock, state_flags);
+	if (node->state == IRQ_ENABLED) {
+		ret = sde_core_irq_disable_nolock(kms, irq_idx);
+		if (ret) {
+			DRM_ERROR("failed to disable irq %d, ret %d\n",
+					irq_idx, ret);
+			spin_unlock_irqrestore(&node->state_lock, state_flags);
+			spin_unlock_irqrestore(&crtc->spin_lock, flags);
+			ret = pm_runtime_get_sync(kms->dev->dev);
+			if (ret < 0) {
+				SDE_ERROR("failed to enable power %d\n", ret);
+				SDE_EVT32(ret, SDE_EVTLOG_ERROR);
+				return;
+			}
+
+			for (i = 0; i < crtc->num_mixers; i++) {
+				hw_dspp = crtc->mixers[i].hw_dspp;
+				if (hw_dspp && hw_dspp->ops.lock_histogram)
+					hw_dspp->ops.lock_histogram(hw_dspp,
+							&lock_hist);
+			}
+			pm_runtime_put_sync(kms->dev->dev);
+			return;
+		}
+		node->state = IRQ_DISABLED;
+	}
+	spin_unlock_irqrestore(&node->state_lock, state_flags);
+	spin_unlock_irqrestore(&crtc->spin_lock, flags);
+
+	if (!crtc->hist_blob)
+		return;
+
 	/* disable histogram irq */
 	spin_lock_irqsave(&crtc->spin_lock, flags);
 	node = _sde_cp_get_intr_node(DRM_EVENT_HISTOGRAM, crtc);

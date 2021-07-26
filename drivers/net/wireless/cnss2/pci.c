@@ -4916,6 +4916,7 @@ void cnss_pci_collect_dump_info(struct cnss_pci_data *pci_priv, bool in_panic)
 		plat_priv->ramdump_info_v2.dump_data_vaddr;
 	struct image_info *fw_image, *rddm_image;
 	struct cnss_fw_mem *fw_mem = plat_priv->fw_mem;
+	char sfr_buf[SFR_BUF_SIZE];
 	int ret, i, j;
 
 	if (test_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state) &&
@@ -4999,7 +5000,7 @@ void cnss_pci_collect_dump_info(struct cnss_pci_data *pci_priv, bool in_panic)
 
 	dump_data->nentries += rddm_image->entries;
 
-	mhi_dump_sfr(pci_priv->mhi_ctrl);
+	mhi_dump_sfr(pci_priv->mhi_ctrl, sfr_buf, sizeof(sfr_buf));
 
 	cnss_pr_dbg("Collect remote heap dump segment\n");
 

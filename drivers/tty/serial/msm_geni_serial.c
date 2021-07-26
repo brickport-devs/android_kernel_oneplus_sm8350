@@ -24,6 +24,7 @@
 #include <linux/tty_flip.h>
 #include <linux/ioctl.h>
 #include <linux/pinctrl/consumer.h>
+#include <linux/pinctrl/devinfo.h>
 #include <linux/dma-mapping.h>
 #include <uapi/linux/msm_geni_serial.h>
 #include <soc/qcom/boot_stats.h>
@@ -264,6 +265,30 @@ static int uart_line_id;
 
 #define GET_DEV_PORT(uport) \
 	container_of(uport, struct msm_geni_serial_port, uport)
+
+#ifdef CONFIG_QGKI
+struct oemconsole {
+	bool default_console;
+	bool console_initialized;
+};
+
+static struct oemconsole oem_console = {
+	.default_console       = false,
+	.console_initialized   = false,
+};
+
+static int __init parse_console_config(char *str)
+{
+	pr_err("%s: *akash\n", __func__);
+	if (str == NULL)
+		return 0;
+	if (!strcmp(str, "ttyMSM0,115200n8"))
+		oem_console.default_console = true;
+
+	return 0;
+}
+early_param("console", parse_console_config);
+#endif
 
 static struct msm_geni_serial_port msm_geni_console_port;
 static struct msm_geni_serial_port msm_geni_serial_ports[GENI_UART_NR_PORTS];
@@ -1684,6 +1709,9 @@ static int stop_rx_sequencer(struct uart_port *uport)
 	port->s_cmd = false;
 
 exit_rx_seq:
+	if (!uart_console(uport))
+		msm_geni_serial_set_manual_flow(true, port);
+
 	geni_status = geni_read_reg_nolog(uport->membase, SE_GENI_STATUS);
 	IPC_LOG_MSG(port->ipc_log_misc, "%s: End 0x%x dma_dbg:0x%x\n",
 		    __func__, geni_status,
@@ -3363,6 +3391,13 @@ static int msm_geni_serial_probe(struct platform_device *pdev)
 	place_marker(boot_marker);
 
 	is_console = (drv->cons ? true : false);
+#ifdef CONFIG_QGKI
+	if (!oem_console.default_console && is_console) {
+		dev_err(&pdev->dev, "%s:return fake success\n", __func__);
+		devm_pinctrl_put(pdev->dev.pins->p);
+		return 0;
+	}
+#endif
 	dev_port = get_port_from_line(line, is_console);
 	if (IS_ERR_OR_NULL(dev_port)) {
 		ret = PTR_ERR(dev_port);
@@ -3484,8 +3519,12 @@ exit_geni_serial_probe:
 static int msm_geni_serial_remove(struct platform_device *pdev)
 {
 	struct msm_geni_serial_port *port = platform_get_drvdata(pdev);
-	struct uart_driver *drv =
-			(struct uart_driver *)port->uport.private_data;
+	struct uart_driver *drv;
+
+	if (port == NULL)
+		return 0;
+
+	drv = (struct uart_driver *)port->uport.private_data;
 
 	if (!uart_console(&port->uport))
 		wakeup_source_unregister(port->geni_wake);
@@ -3617,7 +3656,12 @@ static int msm_geni_serial_sys_suspend(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct msm_geni_serial_port *port = platform_get_drvdata(pdev);
-	struct uart_port *uport = &port->uport;
+	struct uart_port *uport;
+
+	if (port == NULL)
+		return 0;
+
+	uport = &port->uport;
 
 	if (uart_console(uport) || port->pm_auto_suspend_disable) {
 		uart_suspend_port((struct uart_driver *)uport->private_data,
@@ -3647,7 +3691,12 @@ static int msm_geni_serial_sys_resume(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct msm_geni_serial_port *port = platform_get_drvdata(pdev);
-	struct uart_port *uport = &port->uport;
+	struct uart_port *uport;
+
+	if (port == NULL)
+		return 0;
+
+	uport = &port->uport;
 
 	if ((uart_console(uport) &&
 	    console_suspend_enabled && uport->suspended) ||
@@ -3705,6 +3754,47 @@ static struct uart_driver msm_geni_serial_hs_driver = {
 	.nr =  GENI_UART_NR_PORTS,
 };
 
+#ifdef CONFIG_QGKI
+static int msm_serial_pinctrl_probe(struct platform_device *pdev)
+{
+	struct pinctrl *pinctrl = NULL;
+	struct pinctrl_state *set_state = NULL;
+	struct device *dev = &pdev->dev;
+
+	pr_err("%s\n", __func__);
+	pinctrl = devm_pinctrl_get(dev);
+
+	if (pinctrl != NULL) {
+		set_state = pinctrl_lookup_state(
+				pinctrl, "uart_pinctrl_deactive");
+		if (set_state != NULL)
+			pinctrl_select_state(pinctrl, set_state);
+
+		devm_pinctrl_put(pinctrl);
+	}
+	return 0;
+}
+
+static int msm_serial_pinctrl_remove(struct platform_device *pdev)
+{
+	return 0;
+}
+
+static const struct of_device_id oem_serial_pinctrl_of_match[] = {
+	{ .compatible = "oem,oem_serial_pinctrl" },
+	{}
+};
+
+static struct platform_driver msm_platform_serial_pinctrl_driver = {
+	.remove = msm_serial_pinctrl_remove,
+	.probe = msm_serial_pinctrl_probe,
+	.driver = {
+		.name = "oem_serial_pinctrl",
+		.of_match_table = oem_serial_pinctrl_of_match,
+	},
+};
+#endif
+
 static int __init msm_geni_serial_init(void)
 {
 	int ret = 0;
@@ -3742,6 +3832,13 @@ static int __init msm_geni_serial_init(void)
 	}
 
 	pr_info("%s: Driver initialized\n", __func__);
+
+#ifdef CONFIG_QGKI
+	if (!oem_console.default_console) {
+		pr_err("console disabled, config uart gpio to low\n");
+		ret = platform_driver_register(&msm_platform_serial_pinctrl_driver);
+	}
+#endif
 
 	return ret;
 }

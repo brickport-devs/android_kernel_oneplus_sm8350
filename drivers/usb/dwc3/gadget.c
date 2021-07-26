@@ -627,6 +627,7 @@ static int dwc3_gadget_start_config(struct dwc3_ep *dep)
 		if (!dep)
 			continue;
 
+		udelay(1000);
 		ret = dwc3_gadget_set_xfer_resource(dep);
 		if (ret)
 			return ret;
@@ -2318,12 +2319,14 @@ done:
 	return 0;
 }
 
+#define DWC3_SOFT_RESET_TIMEOUT 10 /* 10 msec */
 #define MIN_RUN_STOP_DELAY_MS 50
 
 static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 {
 	u32			reg, reg1;
 	u32			timeout = 1500;
+	ktime_t start, diff;
 
 	dbg_event(0xFF, "run_stop", is_on);
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -2335,7 +2338,22 @@ static int dwc3_gadget_run_stop(struct dwc3 *dwc, int is_on, int suspend)
 
 		if (dwc->revision >= DWC3_REVISION_194A)
 			reg &= ~DWC3_DCTL_KEEP_CONNECT;
+		start = ktime_get();
+		dwc3_writel(dwc->regs, DWC3_DCTL,
+			reg | DWC3_DCTL_CSFTRST);
+		do {
+			reg = dwc3_readl(dwc->regs, DWC3_DCTL);
+			if (!(reg & DWC3_DCTL_CSFTRST))
+				break;
 
+			diff = ktime_sub(ktime_get(), start);
+			if (ktime_to_ms(diff) > DWC3_SOFT_RESET_TIMEOUT) {
+				printk_ratelimited(KERN_ERR
+					"%s:core Reset Timed Out\n", __func__);
+				break;
+			}
+			cpu_relax();
+		} while (true);
 		dwc3_event_buffers_setup(dwc);
 		__dwc3_gadget_start(dwc);
 
@@ -2677,10 +2695,6 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *_gadget, int is_active)
 
 	dbg_event(0xFF, "VbusSess", is_active);
 
-	disable_irq(dwc->irq);
-
-	flush_work(&dwc->bh_work);
-
 	spin_lock_irqsave(&dwc->lock, flags);
 
 	/* Mark that the vbus was powered */
@@ -2702,8 +2716,6 @@ static int dwc3_gadget_vbus_session(struct usb_gadget *_gadget, int is_active)
 		dev_err(dwc->dev, "%s: Core soft reset...\n", __func__);
 		dwc3_device_core_soft_reset(dwc);
 	}
-
-	enable_irq(dwc->irq);
 
 	return 0;
 }
@@ -3683,8 +3695,6 @@ static void dwc3_gadget_reset_interrupt(struct dwc3 *dwc)
 	dwc->b_suspend = false;
 	dwc3_notify_event(dwc, DWC3_CONTROLLER_NOTIFY_OTG_EVENT, 0);
 
-	usb_gadget_vbus_draw(&dwc->gadget, 100);
-
 	dwc3_reset_gadget(dwc);
 
 	reg = dwc3_readl(dwc->regs, DWC3_DCTL);
@@ -4078,8 +4088,6 @@ static void dwc3_gadget_interrupt(struct dwc3 *dwc,
 			if (dwc->gadget.state >= USB_STATE_CONFIGURED)
 				dwc3_gadget_suspend_interrupt(dwc,
 						event->event_info);
-			else
-				usb_gadget_vbus_draw(&dwc->gadget, 2);
 		}
 		break;
 	case DWC3_DEVICE_EVENT_SOF:

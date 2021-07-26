@@ -1056,6 +1056,18 @@ int xhci_suspend(struct xhci_hcd *xhci, bool do_wakeup)
 		spin_unlock_irq(&xhci->lock);
 		return -ETIMEDOUT;
 	}
+	if ((readl_relaxed(&xhci->op_regs->status) & STS_EINT) ||
+			(readl_relaxed(&xhci->op_regs->status) & STS_PORT)) {
+		xhci_warn(xhci, "WARN: xHC EINT/PCD set status:%x\n",
+			readl_relaxed(&xhci->op_regs->status));
+		set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+		set_bit(HCD_FLAG_HW_ACCESSIBLE, &xhci->shared_hcd->flags);
+		command = readl_relaxed(&xhci->op_regs->command);
+		command |= CMD_RUN;
+		writel_relaxed(command, &xhci->op_regs->command);
+		spin_unlock_irq(&xhci->lock);
+		return -EBUSY;
+	}
 	xhci_clear_command_ring(xhci);
 
 	/* step 3: save registers */

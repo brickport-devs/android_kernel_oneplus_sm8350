@@ -537,6 +537,8 @@ static int f2fs_file_mmap(struct file *file, struct vm_area_struct *vma)
 static int f2fs_file_open(struct inode *inode, struct file *filp)
 {
 	int err = fscrypt_file_open(inode, filp);
+	struct fuse_package *fp = current->fpack;
+	char *iname;
 
 	if (err)
 		return err;
@@ -550,7 +552,18 @@ static int f2fs_file_open(struct inode *inode, struct file *filp)
 
 	filp->f_mode |= FMODE_NOWAIT;
 
-	return dquot_file_open(inode, filp);
+	err = dquot_file_open(inode, filp);
+	if (!err && fp && fp->fuse_open_req && !fp->filp && fp->iname) {
+		iname = inode_name(inode);
+		if (iname) {
+			if (strlen(iname) >= 6 && !strcasecmp(&iname[6], fp->iname)) {
+				fp->filp = filp;
+				get_file(filp);
+			}
+			__putname(iname);
+		}
+	}
+	return err;
 }
 
 void f2fs_truncate_data_blocks_range(struct dnode_of_data *dn, int count)

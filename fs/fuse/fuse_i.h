@@ -163,6 +163,11 @@ enum {
 struct fuse_conn;
 struct fuse_release_args;
 
+struct fuse_shortcircuit {
+	struct file *filp;
+	struct cred *cred;
+};
+
 /** FUSE specific file data */
 struct fuse_file {
 	/** Fuse connection for this file */
@@ -208,6 +213,8 @@ struct fuse_file {
 
 	} readdir;
 
+	struct fuse_shortcircuit sct;
+
 	/** RB node to be linked on fuse_conn->polled_files */
 	struct rb_node polled_node;
 
@@ -252,6 +259,8 @@ struct fuse_args {
 	bool may_block:1;
 	struct fuse_in_arg in_args[3];
 	struct fuse_arg out_args[2];
+	struct fuse_shortcircuit sct;
+	char *iname;
 	void (*end)(struct fuse_conn *fc, struct fuse_args *args, int error);
 
 	/* Path used for completing d_canonical_path */
@@ -355,6 +364,9 @@ struct fuse_req {
 	struct {
 		struct fuse_out_header h;
 	} out;
+
+	struct fuse_shortcircuit sct;
+	char *iname;
 
 	/** Used to wake up the task waiting for completion of request*/
 	wait_queue_head_t waitq;
@@ -723,6 +735,8 @@ struct fuse_conn {
 	/* Do not show mount options */
 	unsigned int no_mount_options:1;
 
+	unsigned int shortcircuit:1;
+
 	/** The number of requests waiting for completion */
 	atomic_t num_waiting;
 
@@ -1080,6 +1094,7 @@ extern const struct xattr_handler *fuse_no_acl_xattr_handlers[];
 struct posix_acl;
 struct posix_acl *fuse_get_acl(struct inode *inode, int type);
 int fuse_set_acl(struct inode *inode, struct posix_acl *acl, int type);
+extern int sct_mode;
 
 
 /* readdir.c */
@@ -1095,5 +1110,11 @@ unsigned int fuse_len_args(unsigned int numargs, struct fuse_arg *args);
  */
 u64 fuse_get_unique(struct fuse_iqueue *fiq);
 void fuse_free_conn(struct fuse_conn *fc);
+
+int fuse_shortcircuit_setup(struct fuse_conn *fc, struct fuse_req *req);
+ssize_t fuse_shortcircuit_read_iter(struct kiocb *iocb, struct iov_iter *to);
+ssize_t fuse_shortcircuit_write_iter(struct kiocb *iocb, struct iov_iter *from);
+ssize_t fuse_shortcircuit_mmap(struct file *file, struct vm_area_struct *vma);
+void fuse_shortcircuit_release(struct fuse_file *ff);
 
 #endif /* _FS_FUSE_I_H */

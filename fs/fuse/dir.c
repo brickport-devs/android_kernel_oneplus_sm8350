@@ -498,6 +498,8 @@ static int fuse_create_open(struct inode *dir, struct dentry *entry,
 		mode &= ~current_umask();
 
 	flags &= ~O_NOCTTY;
+	if (fc->writeback_cache)
+		flags &= ~O_APPEND;
 	memset(&inarg, 0, sizeof(inarg));
 	memset(&outentry, 0, sizeof(outentry));
 	inarg.flags = flags;

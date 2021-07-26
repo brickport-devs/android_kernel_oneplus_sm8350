@@ -45,6 +45,8 @@ static int fuse_send_open(struct fuse_conn *fc, u64 nodeid, struct file *file,
 	inarg.flags = file->f_flags & ~(O_CREAT | O_EXCL | O_NOCTTY);
 	if (!fc->atomic_o_trunc)
 		inarg.flags &= ~O_TRUNC;
+	if (fc->writeback_cache)
+		inarg.flags &= ~O_APPEND;
 	args.opcode = opcode;
 	args.nodeid = nodeid;
 	args.in_numargs = 1;

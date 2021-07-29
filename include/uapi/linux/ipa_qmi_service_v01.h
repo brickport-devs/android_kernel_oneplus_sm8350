@@ -3,6 +3,11 @@
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
  */
 
+#ifndef IPA_QMI_SERVICE_V01_H
+#define IPA_QMI_SERVICE_V01_H
+
+#include <linux/types.h>
+
 /*
  * This header file defines the types and structures that were defined in
  * ipa. It contains the constant values defined, enums, structures,
@@ -29,10 +34,6 @@
  * by the decode routine and should be checked so that the correct number of
  * elements in the array will be accessed.
  */
-#ifndef IPA_QMI_SERVICE_V01_H
-#define IPA_QMI_SERVICE_V01_H
-
-#include <linux/types.h>
 
 #define QMI_IPA_REMOTE_MHI_CHANNELS_NUM_MAX_V01 6
 #define QMI_IPA_MAX_FILTERS_EX_V01 128

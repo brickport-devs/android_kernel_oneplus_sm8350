@@ -107,7 +107,7 @@ static inline void backlight_unregister_fb(struct backlight_device *bd)
 }
 #endif /* CONFIG_FB */
 
-static void backlight_generate_event(struct backlight_device *bd,
+static void __maybe_unused backlight_generate_event(struct backlight_device *bd,
 				     enum backlight_update_reason reason)
 {
 	char *envp[2];

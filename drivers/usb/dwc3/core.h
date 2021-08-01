@@ -314,6 +314,7 @@
 
 /* Global USB2 PHY Vendor Control Register */
 #define DWC3_GUSB2PHYACC_NEWREGREQ	BIT(25)
+#define DWC3_GUSB2PHYACC_DONE		BIT(24)
 #define DWC3_GUSB2PHYACC_BUSY		BIT(23)
 #define DWC3_GUSB2PHYACC_WRITE		BIT(22)
 #define DWC3_GUSB2PHYACC_ADDR(n)	(n << 16)
@@ -1363,6 +1364,7 @@ struct dwc3 {
 	unsigned		tx_de_emphasis:2;
 	unsigned		err_evt_seen:1;
 	unsigned		enable_bus_suspend:1;
+	unsigned		usb2_l1_disable:1;
 
 	atomic_t		in_lpm;
 	bool			b_suspend;

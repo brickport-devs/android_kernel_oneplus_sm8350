@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Opening fs-verity files
+ * fs/verity/open.c: opening fs-verity files
  *
  * Copyright 2019 Google LLC
  */

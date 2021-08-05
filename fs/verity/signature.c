@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Verification of builtin signatures
+ * fs/verity/signature.c: verification of builtin signatures
  *
  * Copyright 2019 Google LLC
  */

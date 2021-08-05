@@ -61,6 +61,15 @@ struct fscrypt_nokey_name {
  */
 #define FSCRYPT_NOKEY_NAME_MAX	offsetofend(struct fscrypt_nokey_name, sha256)
 
+static void fscrypt_do_sha256(const u8 *data, unsigned int data_len, u8 *result)
+{
+	struct sha256_state sctx;
+
+	sha256_init(&sctx);
+	sha256_update(&sctx, data, data_len);
+	sha256_final(&sctx, result);
+}
+
 static inline bool fscrypt_is_dot_dotdot(const struct qstr *str)
 {
 	if (str->len == 1 && str->name[0] == '.')
@@ -357,9 +366,9 @@ int fscrypt_fname_disk_to_usr(const struct inode *inode,
 	} else {
 		memcpy(nokey_name.bytes, iname->name, sizeof(nokey_name.bytes));
 		/* Compute strong hash of remaining part of name. */
-		sha256(&iname->name[sizeof(nokey_name.bytes)],
-		       iname->len - sizeof(nokey_name.bytes),
-		       nokey_name.sha256);
+		fscrypt_do_sha256(&iname->name[sizeof(nokey_name.bytes)],
+				  iname->len - sizeof(nokey_name.bytes),
+				  nokey_name.sha256);
 		size = FSCRYPT_NOKEY_NAME_MAX;
 	}
 	oname->len = base64_encode((const u8 *)&nokey_name, size, oname->name);
@@ -488,7 +497,7 @@ bool fscrypt_match_name(const struct fscrypt_name *fname,
 {
 	const struct fscrypt_nokey_name *nokey_name =
 		(const void *)fname->crypto_buf.name;
-	u8 digest[SHA256_DIGEST_SIZE];
+	u8 sha256[SHA256_DIGEST_SIZE];
 
 	if (likely(fname->disk_name.name)) {
 		if (de_name_len != fname->disk_name.len)
@@ -499,9 +508,9 @@ bool fscrypt_match_name(const struct fscrypt_name *fname,
 		return false;
 	if (memcmp(de_name, nokey_name->bytes, sizeof(nokey_name->bytes)))
 		return false;
-	sha256(&de_name[sizeof(nokey_name->bytes)],
-	       de_name_len - sizeof(nokey_name->bytes), digest);
-	return !memcmp(digest, nokey_name->sha256, sizeof(digest));
+	fscrypt_do_sha256(&de_name[sizeof(nokey_name->bytes)],
+			  de_name_len - sizeof(nokey_name->bytes), sha256);
+	return !memcmp(sha256, nokey_name->sha256, sizeof(sha256));
 }
 EXPORT_SYMBOL_GPL(fscrypt_match_name);
 

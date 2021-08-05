@@ -114,9 +114,11 @@ static int ext4_readdir(struct file *file, struct dir_context *ctx)
 	struct buffer_head *bh = NULL;
 	struct fscrypt_str fstr = FSTR_INIT(NULL, 0);
 
-	err = fscrypt_prepare_readdir(inode);
-	if (err)
-		return err;
+	if (IS_ENCRYPTED(inode)) {
+		err = fscrypt_get_encryption_info(inode);
+		if (err)
+			return err;
+	}
 
 	if (is_dx_dir(inode)) {
 		err = ext4_dx_readdir(file, ctx);

@@ -547,7 +547,7 @@ out:
 
 /**
  * fscrypt_get_encryption_info() - set up an inode's encryption key
- * @inode: the inode to set up the key for.  Must be encrypted.
+ * @inode: the inode to set up the key for
  *
  * Set up ->i_crypt_info, if it hasn't already been done.
  *
@@ -569,8 +569,18 @@ int fscrypt_get_encryption_info(struct inode *inode)
 
 	res = inode->i_sb->s_cop->get_context(inode, &ctx, sizeof(ctx));
 	if (res < 0) {
-		fscrypt_warn(inode, "Error %d getting encryption context", res);
-		return res;
+		const union fscrypt_context *dummy_ctx =
+			fscrypt_get_dummy_context(inode->i_sb);
+
+		if (IS_ENCRYPTED(inode) || !dummy_ctx) {
+			fscrypt_warn(inode,
+				     "Error %d getting encryption context",
+				     res);
+			return res;
+		}
+		/* Fake up a context for an unencrypted directory */
+		res = fscrypt_context_size(dummy_ctx);
+		memcpy(&ctx, dummy_ctx, res);
 	}
 
 	res = fscrypt_policy_from_context(&policy, &ctx, res);
@@ -617,14 +627,17 @@ EXPORT_SYMBOL(fscrypt_get_encryption_info);
 int fscrypt_prepare_new_inode(struct inode *dir, struct inode *inode,
 			      bool *encrypt_ret)
 {
-	const union fscrypt_policy *policy;
+	int err;
 	u8 nonce[FSCRYPT_FILE_NONCE_SIZE];
 
-	policy = fscrypt_policy_to_inherit(dir);
-	if (policy == NULL)
+	if (!IS_ENCRYPTED(dir) && fscrypt_get_dummy_context(dir->i_sb) == NULL)
 		return 0;
-	if (IS_ERR(policy))
-		return PTR_ERR(policy);
+
+	err = fscrypt_get_encryption_info(dir);
+	if (err)
+		return err;
+	if (!fscrypt_has_encryption_key(dir))
+		return -ENOKEY;
 
 	if (WARN_ON_ONCE(inode->i_mode == 0))
 		return -EINVAL;
@@ -641,7 +654,9 @@ int fscrypt_prepare_new_inode(struct inode *dir, struct inode *inode,
 	*encrypt_ret = true;
 
 	get_random_bytes(nonce, FSCRYPT_FILE_NONCE_SIZE);
-	return fscrypt_setup_encryption_info(inode, policy, nonce,
+	return fscrypt_setup_encryption_info(inode,
+					     &dir->i_crypt_info->ci_policy,
+					     nonce,
 					     IS_CASEFOLDED(dir) &&
 					     S_ISDIR(inode->i_mode));
 }

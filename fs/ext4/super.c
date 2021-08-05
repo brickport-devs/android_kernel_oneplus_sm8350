@@ -1055,7 +1055,7 @@ static void ext4_put_super(struct super_block *sb)
 		crypto_free_shash(sbi->s_chksum_driver);
 	kfree(sbi->s_blockgroup_lock);
 	fs_put_dax(sbi->s_daxdev);
-	fscrypt_free_dummy_policy(&sbi->s_dummy_enc_policy);
+	fscrypt_free_dummy_context(&sbi->s_dummy_enc_ctx);
 #ifdef CONFIG_UNICODE
 	utf8_unload(sbi->s_encoding);
 #endif
@@ -1341,9 +1341,10 @@ retry:
 	return res;
 }
 
-static const union fscrypt_policy *ext4_get_dummy_policy(struct super_block *sb)
+static const union fscrypt_context *
+ext4_get_dummy_context(struct super_block *sb)
 {
-	return EXT4_SB(sb)->s_dummy_enc_policy.policy;
+	return EXT4_SB(sb)->s_dummy_enc_ctx.ctx;
 }
 
 static bool ext4_has_stable_inodes(struct super_block *sb)
@@ -1362,7 +1363,7 @@ static const struct fscrypt_operations ext4_cryptops = {
 	.key_prefix		= "ext4:",
 	.get_context		= ext4_get_context,
 	.set_context		= ext4_set_context,
-	.get_dummy_policy	= ext4_get_dummy_policy,
+	.get_dummy_context	= ext4_get_dummy_context,
 	.empty_dir		= ext4_empty_dir,
 	.max_namelen		= EXT4_NAME_LEN,
 	.has_stable_inodes	= ext4_has_stable_inodes,
@@ -1821,13 +1822,12 @@ static int ext4_set_test_dummy_encryption(struct super_block *sb,
 	 * needed to allow it to be set or changed during remount.  We do allow
 	 * it to be specified during remount, but only if there is no change.
 	 */
-	if (is_remount && !sbi->s_dummy_enc_policy.policy) {
+	if (is_remount && !sbi->s_dummy_enc_ctx.ctx) {
 		ext4_msg(sb, KERN_WARNING,
 			 "Can't set test_dummy_encryption on remount");
 		return -1;
 	}
-	err = fscrypt_set_test_dummy_encryption(sb, arg,
-						&sbi->s_dummy_enc_policy);
+	err = fscrypt_set_test_dummy_encryption(sb, arg, &sbi->s_dummy_enc_ctx);
 	if (err) {
 		if (err == -EEXIST)
 			ext4_msg(sb, KERN_WARNING,
@@ -4763,7 +4763,7 @@ failed_mount:
 	for (i = 0; i < EXT4_MAXQUOTAS; i++)
 		kfree(get_qf_name(sb, sbi, i));
 #endif
-	fscrypt_free_dummy_policy(&sbi->s_dummy_enc_policy);
+	fscrypt_free_dummy_context(&sbi->s_dummy_enc_ctx);
 	ext4_blkdev_remove(sbi);
 	brelse(bh);
 out_fail:

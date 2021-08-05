@@ -21,7 +21,7 @@
 
 #define FS_CRYPTO_BLOCK_SIZE		16
 
-union fscrypt_policy;
+union fscrypt_context;
 struct fscrypt_info;
 struct seq_file;
 
@@ -62,7 +62,8 @@ struct fscrypt_operations {
 	int (*get_context)(struct inode *inode, void *ctx, size_t len);
 	int (*set_context)(struct inode *inode, const void *ctx, size_t len,
 			   void *fs_data);
-	const union fscrypt_policy *(*get_dummy_policy)(struct super_block *sb);
+	const union fscrypt_context *(*get_dummy_context)(
+		struct super_block *sb);
 	bool (*empty_dir)(struct inode *inode);
 	unsigned int max_namelen;
 	bool (*has_stable_inodes)(struct super_block *sb);
@@ -98,6 +99,14 @@ static inline struct fscrypt_info *fscrypt_get_info(const struct inode *inode)
 static inline bool fscrypt_needs_contents_encryption(const struct inode *inode)
 {
 	return IS_ENCRYPTED(inode) && S_ISREG(inode->i_mode);
+}
+
+static inline const union fscrypt_context *
+fscrypt_get_dummy_context(struct super_block *sb)
+{
+	if (!sb->s_cop->get_dummy_context)
+		return NULL;
+	return sb->s_cop->get_dummy_context(sb);
 }
 
 /*
@@ -149,21 +158,20 @@ int fscrypt_ioctl_get_nonce(struct file *filp, void __user *arg);
 int fscrypt_has_permitted_context(struct inode *parent, struct inode *child);
 int fscrypt_set_context(struct inode *inode, void *fs_data);
 
-struct fscrypt_dummy_policy {
-	const union fscrypt_policy *policy;
+struct fscrypt_dummy_context {
+	const union fscrypt_context *ctx;
 };
 
-int fscrypt_set_test_dummy_encryption(
-				struct super_block *sb,
-				const substring_t *arg,
-				struct fscrypt_dummy_policy *dummy_policy);
+int fscrypt_set_test_dummy_encryption(struct super_block *sb,
+				      const substring_t *arg,
+				      struct fscrypt_dummy_context *dummy_ctx);
 void fscrypt_show_test_dummy_encryption(struct seq_file *seq, char sep,
 					struct super_block *sb);
 static inline void
-fscrypt_free_dummy_policy(struct fscrypt_dummy_policy *dummy_policy)
+fscrypt_free_dummy_context(struct fscrypt_dummy_context *dummy_ctx)
 {
-	kfree(dummy_policy->policy);
-	dummy_policy->policy = NULL;
+	kfree(dummy_ctx->ctx);
+	dummy_ctx->ctx = NULL;
 }
 
 /* keyring.c */
@@ -240,6 +248,12 @@ static inline struct fscrypt_info *fscrypt_get_info(const struct inode *inode)
 static inline bool fscrypt_needs_contents_encryption(const struct inode *inode)
 {
 	return false;
+}
+
+static inline const union fscrypt_context *
+fscrypt_get_dummy_context(struct super_block *sb)
+{
+	return NULL;
 }
 
 static inline void fscrypt_handle_d_move(struct dentry *dentry)
@@ -332,7 +346,7 @@ static inline int fscrypt_set_context(struct inode *inode, void *fs_data)
 	return -EOPNOTSUPP;
 }
 
-struct fscrypt_dummy_policy {
+struct fscrypt_dummy_context {
 };
 
 static inline void fscrypt_show_test_dummy_encryption(struct seq_file *seq,
@@ -342,7 +356,7 @@ static inline void fscrypt_show_test_dummy_encryption(struct seq_file *seq,
 }
 
 static inline void
-fscrypt_free_dummy_policy(struct fscrypt_dummy_policy *dummy_policy)
+fscrypt_free_dummy_context(struct fscrypt_dummy_context *dummy_ctx)
 {
 }
 

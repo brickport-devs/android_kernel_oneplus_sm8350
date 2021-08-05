@@ -128,7 +128,6 @@ int fscrypt_prepare_setflags(struct inode *inode,
 			     unsigned int oldflags, unsigned int flags)
 {
 	struct fscrypt_info *ci;
-	struct key *key;
 	struct fscrypt_master_key *mk;
 	int err;
 
@@ -144,14 +143,13 @@ int fscrypt_prepare_setflags(struct inode *inode,
 		ci = inode->i_crypt_info;
 		if (ci->ci_policy.version != FSCRYPT_POLICY_V2)
 			return -EINVAL;
-		key = ci->ci_master_key;
-		mk = key->payload.data[0];
-		down_read(&key->sem);
+		mk = ci->ci_master_key->payload.data[0];
+		down_read(&mk->mk_secret_sem);
 		if (is_master_key_secret_present(&mk->mk_secret))
 			err = fscrypt_derive_dirhash_key(ci, mk);
 		else
 			err = -ENOKEY;
-		up_read(&key->sem);
+		up_read(&mk->mk_secret_sem);
 		return err;
 	}
 	return 0;

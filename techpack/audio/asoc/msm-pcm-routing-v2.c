@@ -1411,13 +1411,6 @@ int msm_pcm_routing_set_stream_ec_ref_chmix_cfg(
 		ret = -EINVAL;
 		goto done;
 	}
-	if (cfg_data->input_channel != msm_ec_ref_ch) {
-		pr_err("%s: mismatched input ch %d with port config ch %d\n",
-				__func__, cfg_data->input_channel,
-				 msm_ec_ref_ch);
-		ret = -EINVAL;
-		goto done;
-	}
 
 	pr_debug("%s: fedai_id %d, input_channel %d output_channel %d\n",
 		__func__, fedai_id,
@@ -1481,10 +1474,12 @@ int msm_pcm_routing_reg_stream_app_type_cfg(
 		goto done;
 	}
 
-	pr_debug("%s: fedai_id %d, session_type %d, be_id %d, app_type %d, acdb_dev_id %d, sample_rate %d copp_token %d\n",
+	pr_debug("%s: fedai_id %d, session_type %d, be_id %d, app_type %d, acdb_dev_id %d,"
+		"sample_rate %d, copp_token %d, bit_width %d\n",
 		__func__, fedai_id, session_type, be_id,
 		cfg_data->app_type, cfg_data->acdb_dev_id,
-		cfg_data->sample_rate, cfg_data->copp_token);
+		cfg_data->sample_rate, cfg_data->copp_token,
+		cfg_data->bit_width);
 
 	if (!is_mm_lsm_fe_id(fedai_id)) {
 		pr_err("%s: Invalid machine driver ID %d\n",
@@ -1567,10 +1562,12 @@ int msm_pcm_routing_get_stream_app_type_cfg(
 
 	*bedai_id = be_id;
 	*cfg_data = fe_dai_app_type_cfg[fedai_id][session_type][be_id];
-	pr_debug("%s: fedai_id %d, session_type %d, be_id %d, app_type %d, acdb_dev_id %d, sample_rate %d copp_token %d\n",
+	pr_debug("%s: fedai_id %d, session_type %d, be_id %d, app_type %d, acdb_dev_id %d,"
+		"sample_rate %d, copp_token %d, bit_width %d\n",
 		__func__, fedai_id, session_type, *bedai_id,
 		cfg_data->app_type, cfg_data->acdb_dev_id,
-		cfg_data->sample_rate, cfg_data->copp_token);
+		cfg_data->sample_rate, cfg_data->copp_token,
+		cfg_data->bit_width);
 done:
 	return ret;
 }
@@ -2085,6 +2082,8 @@ int msm_pcm_routing_reg_phy_compr_stream(int fe_id, int perf_mode,
 				sample_rate =
 			fe_dai_app_type_cfg[fe_id][session_type][i].sample_rate;
 				bit_width =
+					(fe_dai_app_type_cfg[fe_id][session_type][i].bit_width) ?
+					fe_dai_app_type_cfg[fe_id][session_type][i].bit_width :
 					app_type_cfg[app_type_idx].bit_width;
 				copp_token =
 			fe_dai_app_type_cfg[fe_id][session_type][i].copp_token;
@@ -2457,6 +2456,8 @@ int msm_pcm_routing_reg_phy_stream(int fedai_id, int perf_mode,
 				fe_dai_app_type_cfg[fedai_id][session_type][i]
 					.sample_rate;
 				bits_per_sample =
+					(fe_dai_app_type_cfg[fedai_id][session_type][i].bit_width) ?
+					fe_dai_app_type_cfg[fedai_id][session_type][i].bit_width :
 					app_type_cfg[app_type_idx].bit_width;
 				copp_token =
 				fe_dai_app_type_cfg[fedai_id][session_type][i]
@@ -2775,6 +2776,8 @@ static void msm_pcm_routing_process_audio(u16 reg, u16 val, int set)
 				fe_dai_app_type_cfg[val][session_type][reg]
 					.sample_rate;
 				bits_per_sample =
+					(fe_dai_app_type_cfg[val][session_type][reg].bit_width) ?
+					fe_dai_app_type_cfg[val][session_type][reg].bit_width :
 					app_type_cfg[app_type_idx].bit_width;
 				copp_token =
 				fe_dai_app_type_cfg[val][session_type][reg]
@@ -41632,6 +41635,8 @@ static int msm_pcm_routing_prepare(struct snd_pcm_substream *substream)
 					fe_dai_app_type_cfg[i][session_type]
 							   [be_id].sample_rate;
 				bits_per_sample =
+					(fe_dai_app_type_cfg[i][session_type][be_id].bit_width) ?
+					fe_dai_app_type_cfg[i][session_type][be_id].bit_width :
 					app_type_cfg[app_type_idx].bit_width;
 				copp_token =
 					fe_dai_app_type_cfg[i][session_type]
@@ -42986,7 +42991,7 @@ static struct afe_clk_set internal_mclk = {
 	Q6AFE_LPASS_IBIT_CLK_12_P288_MHZ,
 	Q6AFE_LPASS_CLK_ATTRIBUTE_COUPLE_NO,
 	Q6AFE_LPASS_CLK_ROOT_DEFAULT,
-	1,
+	0,
 };
 
 static int msm_internal_mclk_ctl_get(struct snd_kcontrol *kcontrol,

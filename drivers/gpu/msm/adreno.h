@@ -882,13 +882,9 @@ extern unsigned int *adreno_ft_regs;
 extern unsigned int adreno_ft_regs_num;
 extern unsigned int *adreno_ft_regs_val;
 
-extern const struct adreno_gpudev adreno_a3xx_gpudev;
-extern const struct adreno_gpudev adreno_a5xx_gpudev;
 extern const struct adreno_gpudev adreno_a6xx_gpudev;
 extern const struct adreno_gpudev adreno_a6xx_gmu_gpudev;
 extern const struct adreno_gpudev adreno_a6xx_rgmu_gpudev;
-extern const struct adreno_gpudev adreno_a619_holi_gpudev;
-extern const struct adreno_gpudev adreno_a630_gpudev;
 extern const struct adreno_gpudev adreno_a6xx_hwsched_gpudev;
 
 extern int adreno_wake_nice;
@@ -1002,13 +998,12 @@ void adreno_active_count_put(struct adreno_device *adreno_dev);
 #define ADRENO_TARGET(_name, _id) \
 static inline int adreno_is_##_name(struct adreno_device *adreno_dev) \
 { \
-	return (ADRENO_GPUREV(adreno_dev) == (_id)); \
+	return 0; \
 }
 
 static inline int adreno_is_a3xx(struct adreno_device *adreno_dev)
 {
-	return ((ADRENO_GPUREV(adreno_dev) >= 300) &&
-		(ADRENO_GPUREV(adreno_dev) < 400));
+	return 0;
 }
 
 ADRENO_TARGET(a304, ADRENO_REV_A304)
@@ -1017,8 +1012,7 @@ ADRENO_TARGET(a306a, ADRENO_REV_A306A)
 
 static inline int adreno_is_a5xx(struct adreno_device *adreno_dev)
 {
-	return ADRENO_GPUREV(adreno_dev) >= 500 &&
-			ADRENO_GPUREV(adreno_dev) < 600;
+	return 0;
 }
 
 ADRENO_TARGET(a505, ADRENO_REV_A505)
@@ -1031,40 +1025,32 @@ ADRENO_TARGET(a540, ADRENO_REV_A540)
 
 static inline int adreno_is_a530v2(struct adreno_device *adreno_dev)
 {
-	return (ADRENO_GPUREV(adreno_dev) == ADRENO_REV_A530) &&
-		(ADRENO_CHIPID_PATCH(adreno_dev->chipid) == 1);
+	return 0;
 }
 
 static inline int adreno_is_a530v3(struct adreno_device *adreno_dev)
 {
-	return (ADRENO_GPUREV(adreno_dev) == ADRENO_REV_A530) &&
-		(ADRENO_CHIPID_PATCH(adreno_dev->chipid) == 2);
+	return 0;
 }
 
 static inline int adreno_is_a505_or_a506(struct adreno_device *adreno_dev)
 {
-	return ADRENO_GPUREV(adreno_dev) >= 505 &&
-			ADRENO_GPUREV(adreno_dev) <= 506;
+	return 0;
 }
 
 static inline int adreno_is_a6xx(struct adreno_device *adreno_dev)
 {
-	return ADRENO_GPUREV(adreno_dev) >= 600 &&
-			ADRENO_GPUREV(adreno_dev) <= 702;
+	return 1;
 }
 
 static inline int adreno_is_a642(struct adreno_device *adreno_dev)
 {
-	return (adreno_dev->gpucore->compatible &&
-		!strcmp(adreno_dev->gpucore->compatible,
-		"qcom,adreno-gpu-a642"));
+	return 0;
 }
 
 static inline int adreno_is_a642l(struct adreno_device *adreno_dev)
 {
-	return (adreno_dev->gpucore->compatible &&
-		!strcmp(adreno_dev->gpucore->compatible,
-		"qcom,adreno-gpu-a642l"));
+	return 0;
 }
 
 ADRENO_TARGET(a610, ADRENO_REV_A610)
@@ -1081,10 +1067,7 @@ ADRENO_TARGET(a702, ADRENO_REV_A702)
 /* A642 and A642L are derived from A660 and shares same logic */
 static inline int adreno_is_a660(struct adreno_device *adreno_dev)
 {
-	unsigned int rev = ADRENO_GPUREV(adreno_dev);
-
-	return (rev == ADRENO_REV_A660 || adreno_is_a642(adreno_dev) ||
-		adreno_is_a642l(adreno_dev));
+	return 1;
 }
 
 /*
@@ -1093,10 +1076,7 @@ static inline int adreno_is_a660(struct adreno_device *adreno_dev)
  */
 static inline int adreno_is_a615_family(struct adreno_device *adreno_dev)
 {
-	unsigned int rev = ADRENO_GPUREV(adreno_dev);
-
-	return (rev == ADRENO_REV_A615 || rev == ADRENO_REV_A616 ||
-			rev == ADRENO_REV_A618 || rev == ADRENO_REV_A619);
+	return 0;
 }
 
 /*
@@ -1105,9 +1085,7 @@ static inline int adreno_is_a615_family(struct adreno_device *adreno_dev)
  */
 static inline int adreno_is_a640_family(struct adreno_device *adreno_dev)
 {
-	unsigned int rev = ADRENO_GPUREV(adreno_dev);
-
-	return (rev == ADRENO_REV_A640 || rev == ADRENO_REV_A680);
+	return 0;
 }
 
 /*
@@ -1128,20 +1106,17 @@ static inline int adreno_is_a650_family(struct adreno_device *adreno_dev)
 
 static inline int adreno_is_a619_holi(struct adreno_device *adreno_dev)
 {
-	return of_device_is_compatible(adreno_dev->dev.pdev->dev.of_node,
-		"qcom,adreno-gpu-a619-holi");
+	return 0;
 }
 
 static inline int adreno_is_a620v1(struct adreno_device *adreno_dev)
 {
-	return (ADRENO_GPUREV(adreno_dev) == ADRENO_REV_A620) &&
-		(ADRENO_CHIPID_PATCH(adreno_dev->chipid) == 0);
+	return 0;
 }
 
 static inline int adreno_is_a640v2(struct adreno_device *adreno_dev)
 {
-	return (ADRENO_GPUREV(adreno_dev) == ADRENO_REV_A640) &&
-		(ADRENO_CHIPID_PATCH(adreno_dev->chipid) == 1);
+	return 0;
 }
 
 /*

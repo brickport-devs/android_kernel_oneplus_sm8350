@@ -1,0 +1,12 @@
+obj-y += control_center/
+obj-y += cpufreq_bouncing/
+obj-y += defrag/core/
+obj-y += fsc/
+obj-y += houston/
+obj-y += im/
+obj-y += memplus/core/
+obj-y += pccore/
+obj-y += smartboost/core/
+obj-y += tpd/
+obj-y += tpp/
+obj-y += uxcore/core/

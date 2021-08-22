@@ -9,8 +9,10 @@ LINUXINCLUDE += \
 USERINCLUDE += \
             -I$(srctree)/techpack/oneplus/include
 
+obj-y					+= coretech/
 obj-y					+= input/
 obj-y					+= misc/
+obj-y					+= mm/
 obj-$(CONFIG_OPLUS_SM8350_CHARGER)	+= power/
 obj-$(CONFIG_TRI_STATE_KEY)		+= tri_state_key/
 obj-$(CONFIG_AW8697_HAPTIC)		+= vibrator/

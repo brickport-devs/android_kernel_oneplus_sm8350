@@ -84,360 +84,320 @@ int oplus_panel_parse_msd_aod_config(struct dsi_panel *panel)
 		pr_err("[%s] msd-ac-start-point-x unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_start_point_x = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_start_point_x = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-start-point-y", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-start-point-y unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_start_point_y = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_start_point_y = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-width", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-width unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_width = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_width = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-height", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-start-point-x unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_height = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_height = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-center-x", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-center-x unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_center_x = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_center_x = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-center-y", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-center-y unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_center_y = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_center_y = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-start-distance", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-start-distance unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_start_distance = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_start_distance = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-end-distance-hour", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-end-distance-hour unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_end_distance_hour = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_end_distance_hour = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-end-distance-minute", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-end-distance-minute unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_end_distance_minute = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_end_distance_minute = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-end-distance-second", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-end-distance-second unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_end_distance_second = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_end_distance_second = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-thickness-hour", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-thickness-hour unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_thickness_hour = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_thickness_hour = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-thickness-minute", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-thickness-minute unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_thickness_minute = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_thickness_minute = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-thickness-second", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-thickness-second unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_thickness_second = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_thickness_second = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-opposite-distance-hour", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-opposite-distance-hour unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_opposite_distance_hour = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_opposite_distance_hour = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-opposite-distance-minute", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-opposite-distance-minute unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_opposite_distance_minute = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_opposite_distance_minute = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-opposite-distance-second", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-opposite-distance-second unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_opposite_distance_second = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_opposite_distance_second = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-resolution-hour", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-resolution-hour unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_resolution_hour = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_resolution_hour = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-resolution-minute", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-resolution-minute unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_resolution_minute = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_resolution_minute = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-resolution-second", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-resolution-second unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_resolution_second = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_resolution_second = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hour-color-r", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-hour-color-r unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_hour_color_r = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_hour_color_r = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hour-color-g", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-hour-color-g unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_hour_color_g = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_hour_color_g = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hour-color-b", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-hour-color-b unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_hour_color_b = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_hour_color_b = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-minute-color-r", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-minute-color-r unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_minute_color_r = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_minute_color_r = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-minute-color-g", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-minute-color-g unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_minute_color_g = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_minute_color_g = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-minute-color-b", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-minute-color-b unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_minute_color_b = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_minute_color_b = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-second-color-r", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-second-color-r unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_second_color_r = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_second_color_r = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-second-color-g", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-second-color-g unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_second_color_g = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_second_color_g = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-second-color-b", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-second-color-b unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_second_color_b = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_second_color_b = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hms-mask", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-hms-mask unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_hms_mask = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_hms_mask = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hms-priority", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-hms-priority unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_hms_priority = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_hms_priority = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-on", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-on unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_on = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_on = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-2nd_r", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-2nd_r unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_2nd_r = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_2nd_r = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-2nd_g", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-2nd_g unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_2nd_g = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_2nd_g = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-2nd_b", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-2nd_b unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_2nd_b = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_2nd_b = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-3nd_r", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-3nd_r unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_3nd_r = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_3nd_r = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-3nd_g", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-3nd_g unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_3nd_g = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_3nd_g = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-gradation-3nd_b", &val);
 	if (rc) {
 		pr_err("[%s] oplus,msd-ac-gradation-3nd_b unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.msd_ac_gradation_3nd_b = 0;
-	} else {
+	} else
 		panel->msd_config.msd_ac_gradation_3nd_b = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-hour", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-hour unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.hour = 0;
-	} else {
+	} else
 		panel->msd_config.hour = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-minute", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-minute unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.minute = 0;
-	} else {
+	} else
 		panel->msd_config.minute = val;
-	}
 
 	rc = utils->read_u32(utils->data, "oplus,msd-ac-second", &val);
 	if (rc) {
 		pr_err("[%s] msd-ac-second unspecified, defaulting to zero\n",
 			 panel->name);
 		panel->msd_config.second = 0;
-	} else {
+	} else
 		panel->msd_config.second = val;
-	}
 
 	return rc;
 }
@@ -662,7 +622,6 @@ int oplus_display_update_msd_hand_hms_priority(struct dsi_cmd_desc *cmds,
 		rc = -ENOTSUPP;
 		goto error;
 	}
-
 	/* Update msd_hand_thickness info */
 	payload = (u8 *)cmds[19].msg.tx_buf;
 	if (payload) {

@@ -18,13 +18,11 @@
 
 #define to_drm_connector(d) dev_get_drvdata(d)
 
-
 int dsi_cmd_log_enable;
 EXPORT_SYMBOL(dsi_cmd_log_enable);
 
 extern ssize_t mipi_dsi_dcs_write(struct mipi_dsi_device *dsi, u8 cmd,
 			   const void *data, size_t len);
-
 
 int mipi_dsi_dcs_write_c1(struct mipi_dsi_device *dsi,
 						u16 read_number)
@@ -46,18 +44,16 @@ static ssize_t acl_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int acl_mode = 0;
 
 	acl_mode = dsi_display_get_acl_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "acl mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "acl mode = %d\n"
 									"0--acl mode(off)\n"
 									"1--acl mode(5)\n"
 									"2--acl mode(10)\n"
 									"3--acl mode(15)\n",
 									acl_mode);
-	return ret;
 }
 
 static ssize_t acl_store(struct device *dev,
@@ -83,12 +79,11 @@ static ssize_t hbm_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int hbm_mode = 0;
 
 	hbm_mode = dsi_display_get_hbm_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "hbm mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "hbm mode = %d\n"
 											"0--hbm mode(off)\n"
 											"1--hbm mode(XX)\n"
 											"2--hbm mode(XX)\n"
@@ -96,7 +91,6 @@ static ssize_t hbm_show(struct device *dev,
 											"4--hbm mode(XX)\n"
 											"5--hbm mode(670)\n",
 											hbm_mode);
-	return ret;
 }
 
 static ssize_t hbm_store(struct device *dev,
@@ -115,12 +109,13 @@ static ssize_t hbm_store(struct device *dev,
 
 	if (dsi_panel_name == DSI_PANEL_SAMSUNG_ANA6705) {
 		panel_stage_info = dsi_display_get_stage_info(connector);
-		if (((panel_stage_info == 0x02) || (panel_stage_info == 0x03)
-			|| (panel_stage_info == 0x04)) && (hbm_mode == 4)) {
+		if (((panel_stage_info == 0x02) ||
+			(panel_stage_info == 0x03) ||
+			(panel_stage_info == 0x04)) &&
+			(hbm_mode == 4))
 			hbm_mode = hbm_mode - 1;
-		} else {
+		else
 			pr_err("19821 panel stage version is T0/DVT2/PVT&MP");
-		}
 	}
 	ret = dsi_display_set_hbm_mode(connector, hbm_mode);
 	if (ret)
@@ -155,32 +150,29 @@ static ssize_t seed_lp_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int seed_lp_mode = 0;
 
 	if ((dsi_panel_name == DSI_PANEL_SAMSUNG_ANA6706) ||
-		(dsi_panel_name == DSI_PANEL_SAMSUNG_ANA6705)) {
+		(dsi_panel_name == DSI_PANEL_SAMSUNG_ANA6705))
 		seed_lp_mode = dsi_display_get_seed_lp_mode(connector);
-	}
-	ret = scnprintf(buf, PAGE_SIZE, "seed lp mode = %d\n"
+
+	return scnprintf(buf, PAGE_SIZE, "seed lp mode = %d\n"
 									"4--seed lp mode(off)\n"
 									"0--seed lp mode(mode0)\n"
 									"1--seed lp mode(mode1)\n"
 									"2--seed lp mode(mode2)\n",
 									seed_lp_mode);
-	return ret;
 }
+
 static ssize_t hbm_brightness_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int hbm_brightness = 0;
 
 	hbm_brightness = dsi_display_get_hbm_brightness(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", hbm_brightness);
-	return ret;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", hbm_brightness);
 }
 
 static ssize_t hbm_brightness_store(struct device *dev,
@@ -196,18 +188,21 @@ static ssize_t hbm_brightness_store(struct device *dev,
 		pr_err("kstrtoint failed. ret=%d\n", ret);
 		return ret;
 	}
+
 	if (dsi_panel_name == DSI_PANEL_SAMSUNG_ANA6705) {
 		panel_stage_info = dsi_display_get_stage_info(connector);
-		if (((panel_stage_info == 0x02) || (panel_stage_info == 0x03)
-			|| (panel_stage_info == 0x04))) {
+		if (((panel_stage_info == 0x02) ||
+			(panel_stage_info == 0x03) ||
+			(panel_stage_info == 0x04)))
 			hbm_brightness = hbm_brightness + 380;
-		} else {
+		else
 			pr_err("19821 panel stage version is T0/DVT2/PVT&MP");
-		}
 	}
+
 	ret = dsi_display_set_hbm_brightness(connector, hbm_brightness);
 	if (ret)
 		pr_err("set hbm brightness (%d) failed\n", hbm_brightness);
+
 	return count;
 }
 
@@ -215,16 +210,14 @@ static ssize_t op_friginer_print_hbm_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int op_hbm_mode = 0;
 
 	op_hbm_mode = dsi_display_get_fp_hbm_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "OP_FP mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "OP_FP mode = %d\n"
 									"0--finger-hbm mode(off)\n"
 									"1--finger-hbm mode(600)\n",
 									op_hbm_mode);
-	return ret;
 }
 
 static ssize_t op_friginer_print_hbm_store(struct device *dev,
@@ -250,11 +243,7 @@ static ssize_t op_friginer_print_hbm_store(struct device *dev,
 static ssize_t oplus_msd_aod_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
-
-	ret = oplus_display_get_msd_aod_command(buf);
-
-	return ret;
+	return oplus_display_get_msd_aod_command(buf);
 }
 
 static ssize_t oplus_msd_aod_store(struct device *dev,
@@ -265,13 +254,11 @@ static ssize_t oplus_msd_aod_store(struct device *dev,
 	struct dsi_panel *panel = NULL;
 	struct dsi_display *display = get_main_display();
 
-	if (!display) {
+	if (!display)
 		return -ENODEV;
-	}
 
-	if (!display->panel || !display->drm_conn) {
+	if (!display->panel || !display->drm_conn)
 		return -EINVAL;
-	}
 
 	panel = display->panel;
 
@@ -367,13 +354,11 @@ static ssize_t aod_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int aod_mode = 0;
 
 	aod_mode = dsi_display_get_aod_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", aod_mode);
-	return ret;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", aod_mode);
 }
 
 static ssize_t aod_store(struct device *dev,
@@ -388,10 +373,12 @@ static ssize_t aod_store(struct device *dev,
 		pr_err("kstrtoint failed. ret=%d\n", ret);
 		return ret;
 	}
+
 	pr_err("node aod_mode=%d\n", aod_mode);
 	ret = dsi_display_set_aod_mode(connector, aod_mode);
 	if (ret)
 		pr_err("set AOD mode(%d) fail\n", aod_mode);
+
 	return count;
 }
 
@@ -399,16 +386,14 @@ static ssize_t aod_disable_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int aod_disable = 0;
 
 	aod_disable = dsi_display_get_aod_disable(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "AOD disable = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "AOD disable = %d\n"
 									"0--AOD enable\n"
 									"1--AOD disable\n",
 									aod_disable);
-	return ret;
 }
 
 static ssize_t aod_disable_store(struct device *dev,
@@ -435,16 +420,14 @@ static ssize_t DCI_P3_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int dci_p3_mode = 0;
 
 	dci_p3_mode = dsi_display_get_dci_p3_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "dci-p3 mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "dci-p3 mode = %d\n"
 									"0--dci-p3 mode Off\n"
 									"1--dci-p3 mode On\n",
 									dci_p3_mode);
-	return ret;
 }
 
 static ssize_t DCI_P3_store(struct device *dev,
@@ -471,16 +454,14 @@ static ssize_t night_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int night_mode = 0;
 
 	night_mode = dsi_display_get_night_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "night mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "night mode = %d\n"
 									"0--night mode Off\n"
 									"1--night mode On\n",
 									night_mode);
-	return ret;
 }
 
 static ssize_t night_mode_store(struct device *dev,
@@ -507,16 +488,14 @@ static ssize_t native_display_p3_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_p3_mode = 0;
 
 	native_display_p3_mode = dsi_display_get_native_display_p3_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display p3 mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display p3 mode = %d\n"
 									"0--native display p3 mode Off\n"
 									"1--native display p3 mode On\n",
 									native_display_p3_mode);
-	return ret;
 }
 
 static ssize_t native_display_p3_mode_store(struct device *dev,
@@ -542,16 +521,14 @@ static ssize_t native_display_wide_color_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_wide_color_mode = 0;
 
 	native_display_wide_color_mode = dsi_display_get_native_display_wide_color_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display wide color mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display wide color mode = %d\n"
 									"0--native display wide color mode Off\n"
 									"1--native display wide color mode On\n",
 									native_display_wide_color_mode);
-	return ret;
 }
 
 static ssize_t native_display_loading_effect_mode_store(struct device *dev,
@@ -578,17 +555,15 @@ static ssize_t native_display_loading_effect_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_loading_effect_mode = 0;
 
 	native_display_loading_effect_mode = dsi_display_get_native_display_loading_effect_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display loading effect mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display loading effect mode = %d\n"
 									"0--native display loading effect mode Off\n"
 									"1--native display loading effect mode On_1\n"
 									"2--native display loading effect mode On_2\n",
 									native_display_loading_effect_mode);
-	return ret;
 }
 
 static ssize_t native_display_customer_p3_mode_store(struct device *dev,
@@ -615,16 +590,14 @@ static ssize_t native_display_customer_p3_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_customer_p3_mode = 0;
 
 	native_display_customer_p3_mode = dsi_display_get_customer_p3_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display customer p3 mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display customer p3 mode = %d\n"
 									"0--native display customer p3 mode Off\n"
 									"1--native display customer p3 mode On\n",
 									native_display_customer_p3_mode);
-	return ret;
 }
 static ssize_t native_display_customer_srgb_mode_store(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t count)
@@ -650,16 +623,14 @@ static ssize_t native_display_customer_srgb_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_customer_srgb_mode = 0;
 
 	native_display_customer_srgb_mode = dsi_display_get_customer_srgb_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display customer srgb mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display customer srgb mode = %d\n"
 									"0--native display customer srgb mode Off\n"
 									"1--native display customer srgb mode On\n",
 									native_display_customer_srgb_mode);
-	return ret;
 }
 
 
@@ -687,16 +658,14 @@ static ssize_t native_display_srgb_color_mode_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int native_display_srgb_color_mode = 0;
 
 	native_display_srgb_color_mode = dsi_display_get_native_display_srgb_color_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "native display srgb color mode = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "native display srgb color mode = %d\n"
 									"0--native display srgb color mode Off\n"
 									"1--native display srgb color mode On\n",
 									native_display_srgb_color_mode);
-	return ret;
 }
 
 static ssize_t native_display_srgb_color_mode_store(struct device *dev,
@@ -980,7 +949,7 @@ static ssize_t panel_serial_number_show(struct device *dev,
 						    panel_min, panel_sec, panel_msec_int,
 								panel_msec_rem, stage_string_info, panel_code_info, panel_stage_info,
 										panel_production_info);
-    }else if (dsi_panel_name == DSI_PANEL_SAMSUNG_AMB670YF01) {
+    } else if (dsi_panel_name == DSI_PANEL_SAMSUNG_AMB670YF01) {
 		if (panel_stage_info == 0x01)
 			stage_string_info = "STAGE: T0";
 		else if (panel_stage_info == 0x02)
@@ -1002,11 +971,9 @@ static ssize_t panel_serial_number_show(struct device *dev,
 						    panel_min, panel_sec, panel_msec_int,
 								panel_msec_rem, stage_string_info, panel_code_info, panel_stage_info,
 										panel_production_info);
-    }
-	else {
+    } else
 		ret = scnprintf(buf, PAGE_SIZE, "%04d/%02d/%02d %02d:%02d:%02d\n",
 				panel_year, panel_mon, panel_day, panel_hour, panel_min, panel_sec);
-	}
 
 	pr_err("panel year = %d, mon = %d, day = %d, hour = %d, min = %d, msec = %d.%d\n",
 		panel_year, panel_mon, panel_day, panel_hour, panel_min, panel_msec_int, panel_msec_rem);
@@ -1017,23 +984,17 @@ static ssize_t panel_serial_number_show(struct device *dev,
 static ssize_t panel_serial_number_AT_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
 	struct drm_connector *connector = to_drm_connector(dev);
 
-	ret = scnprintf(buf, PAGE_SIZE, "%llu\n", dsi_display_get_serial_number_at(connector));
-
-	return ret;
+	return scnprintf(buf, PAGE_SIZE, "%llu\n", dsi_display_get_serial_number_at(connector));
 }
 
 static ssize_t dsi_on_command_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 
-	ret = dsi_display_get_dsi_on_command(connector, buf);
-
-	return ret;
+	return dsi_display_get_dsi_on_command(connector, buf);
 }
 
 static ssize_t dsi_on_command_store(struct device *dev,
@@ -1053,11 +1014,8 @@ static ssize_t dsi_panel_command_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 
-	ret = dsi_display_get_dsi_panel_command(connector, buf);
-
-	return ret;
+	return dsi_display_get_dsi_panel_command(connector, buf);
 }
 
 static ssize_t dsi_panel_command_store(struct device *dev,
@@ -1077,11 +1035,8 @@ static ssize_t dsi_seed_command_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 
-	ret = dsi_display_get_dsi_seed_command(connector, buf);
-
-	return ret;
+	return dsi_display_get_dsi_seed_command(connector, buf);
 }
 
 static ssize_t dsi_seed_command_store(struct device *dev,
@@ -1100,11 +1055,7 @@ static ssize_t dsi_seed_command_store(struct device *dev,
 static ssize_t dsi_panel_reg_len_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
-
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", reg_read_len);
-
-	return ret;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", reg_read_len);
 }
 
 static ssize_t dsi_panel_reg_len_store(struct device *dev,
@@ -1131,11 +1082,8 @@ static ssize_t dsi_panel_reg_read_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 
-	ret = dsi_display_get_reg_read_command_and_value(connector, buf);
-
-	return ret;
+	return dsi_display_get_reg_read_command_and_value(connector, buf);
 }
 
 static ssize_t dsi_panel_reg_read_store(struct device *dev,
@@ -1154,14 +1102,10 @@ static ssize_t dsi_panel_reg_read_store(struct device *dev,
 static ssize_t dsi_cmd_log_switch_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
-
-	ret = scnprintf(buf, PAGE_SIZE, "dsi cmd log switch = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "dsi cmd log switch = %d\n"
 									"0     -- dsi cmd log switch off\n"
 									"other -- dsi cmd log switch on\n",
 										dsi_cmd_log_enable);
-
-	return ret;
 }
 
 static ssize_t dsi_cmd_log_switch_store(struct device *dev,
@@ -1182,11 +1126,8 @@ int current_freq;
 static ssize_t dynamic_dsitiming_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
-
-	ret = scnprintf(buf, PAGE_SIZE, "current_freq = %d\n",
+	return scnprintf(buf, PAGE_SIZE, "current_freq = %d\n",
 											current_freq);
-	return ret;
 }
 
 static ssize_t dynamic_dsitiming_store(struct device *dev,
@@ -1215,28 +1156,22 @@ extern u32 mode_fps;
 static ssize_t dynamic_fps_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	int ret = 0;
-
-	ret = scnprintf(buf, PAGE_SIZE, "%d\n", mode_fps);
-
-	return ret;
+	return scnprintf(buf, PAGE_SIZE, "%d\n", mode_fps);
 }
 
 static ssize_t panel_mismatch_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 	int wrong_panel = 0;
 
 	dsi_display_panel_mismatch_check(connector);
 
 	wrong_panel = dsi_display_panel_mismatch(connector);
-	ret = scnprintf(buf, PAGE_SIZE, "panel mismatch = %d\n"
+	return scnprintf(buf, PAGE_SIZE, "panel mismatch = %d\n"
 									"0--(panel match)\n"
 									"1--(panel mismatch)\n",
 									wrong_panel);
-	return ret;
 }
 
 int oneplus_force_screenfp;
@@ -1269,14 +1204,9 @@ static ssize_t force_screenfp_show(struct device *dev,
 {
 
 	struct drm_connector *connector = to_drm_connector(dev);
-	int ret = 0;
 
 	oneplus_force_screenfp = dsi_display_get_fp_hbm_mode(connector);
 
-	ret = scnprintf(buf, PAGE_SIZE, "OP_FP mode = %d\n"
-									"0--finger-hbm mode(off)\n"
-									"1--finger-hbm mode(600)\n",
-									oneplus_force_screenfp);
 	return snprintf(buf, PAGE_SIZE, "%d\n", oneplus_force_screenfp);
 }
 
@@ -1295,6 +1225,7 @@ static ssize_t force_screenfp_store(struct device *dev,
 	ret = dsi_display_set_fp_hbm_mode(connector, oneplus_force_screenfp);
 	if (ret)
 		pr_err("set hbm mode(%d) fail\n", oneplus_force_screenfp);
+
 	return count;
 }
 
@@ -1488,20 +1419,20 @@ struct file_operations mytest_ops={
 
 int dsi_register_node(struct drm_connector *drm_conn_dev)
 {
-	if(NULL == drm_conn_dev)
+	if (drm_conn_dev == NULL)
 	{
 		pr_err("drm_conn_dev is NULL \n");
 		return -1;
 	}
-	if(NULL == drm_conn_dev->kdev)
+
+	if (drm_conn_dev->kdev == NULL)
 	{
 		pr_err("drm_conn_dev->kdev is NULL \n");
 		return -1;
 	}
 
-	if(sysfs_create_group(&(drm_conn_dev->kdev->kobj),&connector_dev_group))
-	{
+	if (sysfs_create_group(&(drm_conn_dev->kdev->kobj),&connector_dev_group))
 		return -1;
-	}
+
 	return 0;
 }

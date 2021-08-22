@@ -5025,7 +5025,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 {
 	int fp_index = -1;
 	int fppressed_index = -1;
-    int aod_index = -1;
+	int aod_index = -1;
 	int fppressed_index_rt = -1;
 	int zpos = INT_MAX;
 	int mode;
@@ -5041,7 +5041,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 		display->panel == NULL) {
 		SDE_ERROR("display  panel is null\n");
 		return 0;
-    }
+	}
 
 	if (display->panel->aod_status == 1) {
 		if (oneplus_dim_status == 2 && oneplus_onscreenfp_status == 1) {
@@ -5071,7 +5071,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 		dim_mode = 0;
 	}
 
-    aod_mode = oneplus_aod_hid;
+	aod_mode = oneplus_aod_hid;
 	if (oneplus_dim_status == 5 && display->panel->aod_status == 0)
 		dim_mode = 0;
 
@@ -5083,15 +5083,16 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 			fppressed_index = i;
 			fppressed_index_rt = i;
 		}
-		if (mode ==3)
+		if (mode == 3)
 			aod_index = i;
 	}
-	if (fp_index >=0 && dim_mode != 0)
+
+	if (fp_index >= 0 && dim_mode != 0)
 		display->panel->dim_status = true;
 	else
 		display->panel->dim_status = false;
 
-	if (aod_index <0) {
+	if (aod_index < 0) {
 		oneplus_aod_hid = 0;
 		aod_layer_hide = 0;
 	}
@@ -5099,7 +5100,8 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 	if (fppressed_index_rt < 0) {
 		oneplus_aod_fod = 0;
 		oneplus_aod_dc = 0;
-    }
+	}
+
 	if (finger_type) {
 		if (aod_index >= 0 &&
 			aod_mode == 1) {
@@ -5108,14 +5110,12 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 			aod_index = -1;
 			SDE_ATRACE_END("aod_layer_qbt_hid");
 		}
-        return 0;
+		return 0;
 	}
 
-	if (
-		(fp_index >= 0 && dim_mode != 0) ||
-		(display->panel->aod_status == 1
-		 && oneplus_aod_dc == 0)
-		) {
+	if ((fp_index >= 0 && dim_mode != 0) ||
+		(display->panel->aod_status == 1 &&
+		oneplus_aod_dc == 0)) {
 		op_dimlayer_bl = 0;
 	} else {
 		if (op_dimlayer_bl_enable && !op_dp_enable) {
@@ -5125,9 +5125,8 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 				op_dimlayer_bl = 1;
 				if (mode_fps == 60 && dsi_panel_name == DSI_PANEL_SAMSUNG_S6E3HC2)
 					dim_backlight_pre = 1;
-			} else {
+			} else
 				op_dimlayer_bl = 0;
-			}
 		} else {
 			op_dimlayer_bl = 0;
 			if (dim_backlight_pre) {
@@ -5138,7 +5137,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 				SDE_ERROR("show dl one more frame %d\n", dsi_panel_name);
 			}
 		}
-    }
+	}
 
 	SDE_DEBUG("fp_index=%d,fppressed_index=%d,aod_index=%d\n", fp_index, fppressed_index, aod_index);
 	if (fp_index >= 0 || fppressed_index >= 0 || oneplus_force_screenfp || dim_backlight == 1) {
@@ -5148,6 +5147,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 				return -EINVAL;
 			}
 		}
+
 		if (fppressed_index >= 0) {
 			if (zpos > pstates[fppressed_index].stage)
 				zpos = pstates[fppressed_index].stage;
@@ -5159,14 +5159,13 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 				zpos = pstates[fp_index].stage;
 			pstates[fp_index].stage++;
 		}
+
 		for (i = 0; i < cnt; i++) {
 				if (i == fp_index || i == fppressed_index)
-					{
 					continue;
-					}
 				if (pstates[i].stage >= zpos) {
 				//	SDE_ERROR("Warn!!: the fp layer not on top");
-				pstates[i].stage++;
+					pstates[i].stage++;
 				}
 			}
 		if (zpos == INT_MAX) {
@@ -5184,7 +5183,7 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 				fp_index = -1;
 			}
 		}
-        if (fppressed_index >= 0) {
+		if (fppressed_index >= 0) {
 			if (fp_mode == 0) {
 				pstates[fppressed_index].sde_pstate->property_values[PLANE_PROP_ALPHA].value = 0;
 				if (oneplus_aod_fod == 1 && aod_index < 0) {
@@ -5200,18 +5199,17 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 					}
 				}
 				fppressed_index = -1;
-			} else {
+			} else
 				pstates[fppressed_index].sde_pstate->property_values[PLANE_PROP_ALPHA].value = 0xff;
-			}
 		}
 
-         if (aod_index >= 0) {
+		if (aod_index >= 0) {
 			if (aod_mode == 1) {
 				SDE_DEBUG("aod layer hid");
-                SDE_ATRACE_BEGIN("aod_layer_hid");
+				SDE_ATRACE_BEGIN("aod_layer_hid");
 				pstates[aod_index].sde_pstate->property_values[PLANE_PROP_ALPHA].value = 0;
 				aod_index = -1;
-                SDE_ATRACE_END("aod_layer_hid");
+				SDE_ATRACE_END("aod_layer_hid");
 			}
 		}
 
@@ -5224,11 +5222,11 @@ static int sde_crtc_onscreenfinger_atomic_check(struct sde_crtc_state *cstate,
 			SDE_ERROR("Failed to config dim layer\n");
 			return -EINVAL;
 		}
+
 		if (fppressed_index >= 0)
 			cstate->fingerprint_pressed = true;
-		else {
+		else
 			cstate->fingerprint_pressed = false;
-		}
 	} else {
 		cstate->fingerprint_pressed = false;
 		cstate->fingerprint_mode = false;

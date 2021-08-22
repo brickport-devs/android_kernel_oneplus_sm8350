@@ -355,17 +355,15 @@ int dsi_panel_set_native_loading_effect_mode_nolock(struct dsi_panel *panel, int
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_OFF_O cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect o compensation control off \n");
-			}
 		} else {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_OFF);
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_OFF cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect compensation control off\n");
-			}
 		}
 	} else if (level == 1) {
 		if ((strcmp(panel->name, "samsung amb670yf01 dsc cmd mode panel") == 0)
@@ -374,17 +372,15 @@ int dsi_panel_set_native_loading_effect_mode_nolock(struct dsi_panel *panel, int
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_ON_1_O cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect o compensation control on 1 \n");
-			}
 		} else {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_ON_1);
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_ON_1 cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect compensation control on 1\n");
-			}
 		}
 	} else if (level == 2) {
 		if ((strcmp(panel->name, "samsung amb670yf01 dsc cmd mode panel") == 0)
@@ -393,17 +389,15 @@ int dsi_panel_set_native_loading_effect_mode_nolock(struct dsi_panel *panel, int
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_ON_2_O cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect o compensation control on 2 \n");
-			}
 		} else {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_EFFECT_ON_2);
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_LOADING_EFFECT_ON_2 cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Loading effect compensation control on 2\n");
-			}
 		}
 	}
 
@@ -412,8 +406,6 @@ int dsi_panel_set_native_loading_effect_mode_nolock(struct dsi_panel *panel, int
 
 int dsi_panel_set_native_loading_effect_mode(struct dsi_panel *panel, int level)
 {
-	int rc = 0;
-
 	if (!panel) {
 		DSI_ERR("Invalid params\n");
 		return -EINVAL;
@@ -423,7 +415,7 @@ int dsi_panel_set_native_loading_effect_mode(struct dsi_panel *panel, int level)
 	dsi_panel_set_native_loading_effect_mode_nolock(panel, level);
 	mutex_unlock(&panel->panel_lock);
 
-	return rc;
+	return 0;
 }
 
 int dsi_panel_send_opec_command(struct dsi_panel *panel)
@@ -441,17 +433,15 @@ int dsi_panel_send_opec_command(struct dsi_panel *panel)
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_SET_OPEC_COMMAND_O cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Send DSI_CMD_SET_OPEC_COMMAND_O cmds\n");
-			}
 		} else if (panel->panel_stage_info >= 0x09 && panel->panel_stage_info != 0x15) {
 			rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_OPEC_COMMAND);
 			if (rc) {
 				DSI_ERR("[%s] failed to send DSI_CMD_SET_OPEC_COMMAND cmds, rc=%d\n",
 					panel->name, rc);
-			} else {
+			} else
 				DSI_INFO("Send DSI_CMD_SET_OPEC_COMMAND cmds\n");
-			}
 		}
 	}
 
@@ -460,7 +450,6 @@ int dsi_panel_send_opec_command(struct dsi_panel *panel)
 
 int oplus_dsi_panel_enable(void *dsi_panel)
 {
-	int rc = 0;
 	struct dsi_panel *panel = dsi_panel;
 
 	if (!panel) {
@@ -471,7 +460,7 @@ int oplus_dsi_panel_enable(void *dsi_panel)
 	dsi_panel_send_opec_command(panel);
 	dsi_panel_set_native_loading_effect_mode_nolock(panel, panel->naive_display_loading_effect_mode);
 
-	return rc;
+	return 0;
 }
 
 /* --------------- dsi_display ---------------*/
@@ -497,7 +486,9 @@ void extractLotID(unsigned char* chipID, char *szLotID)
 int extractWaferNumber(unsigned char* chipID)
 {
 	int noWafer;
+
 	noWafer = ((chipID[2] & 0x03) << 3) + (chipID[3] >> 5);
+
 	return noWafer;
 }
 
@@ -576,13 +567,12 @@ eTool discrimination_ANA6706_ToolsType(char* szLotID, int WaferNumber)
 
 int dsi_display_back_ToolsType_ANA67061(u8 *buff)
 {
-	int i;
-	int WaferNumber;
+	int i, WaferNumber;
 	eTool typeTool;
 	char szLotID[6] = { 0 };
 	unsigned char chipID1[6] = { 0 };
 
-	for(i = 1;i <= 5; i++)
+	for (i = 1;i <= 5; i++)
 		chipID1[i-1] = buff[i-1];
 
 	// [6706] Chip IDLot IDWafer Number
@@ -668,6 +658,7 @@ int dsi_display_get_ddic_check_info(struct drm_connector *connector)
 	struct dsi_bridge *c_bridge;
 	int ddic_x = 0;
 	int panel_tool = 0;
+
 	DSI_DEBUG("%s start\n", __func__);
 
 	if ((connector == NULL) || (connector->encoder == NULL)
@@ -689,60 +680,60 @@ int dsi_display_get_ddic_check_info(struct drm_connector *connector)
 
 	switch (dsi_display->panel->ddic_y) {
 	case 2:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 115) && (ddic_x < 186)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+			(ddic_x > 115) && (ddic_x < 186))
 			dsi_display->panel->ddic_check_info = 1;
-		} else
+		else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
 	case 3:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 56) && (ddic_x < 245)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+			(ddic_x > 56) && (ddic_x < 245))
 			dsi_display->panel->ddic_check_info = 1;
-		} else if(strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
-			if((panel_tool == 0) && (ddic_x > 54) && (ddic_x < 140))
+		else if (strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
+			if ((panel_tool == 0) && (ddic_x > 54) && (ddic_x < 140))
 				dsi_display->panel->ddic_check_info = 1;
-			if(((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 32) && (ddic_x < 154))
+			if (((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 32) && (ddic_x < 154))
 				dsi_display->panel->ddic_check_info = 1;
 		} else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
 	case 4:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 40) && (ddic_x < 261)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+			(ddic_x > 40) && (ddic_x < 261))
 			dsi_display->panel->ddic_check_info = 1;
-		} else if(strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
-			if((panel_tool == 0) && (ddic_x > 46) && (ddic_x < 140))
+		else if (strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
+			if ((panel_tool == 0) && (ddic_x > 46) && (ddic_x < 140))
 				dsi_display->panel->ddic_check_info = 1;
-			if(((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 24) && (ddic_x < 162))
+			if (((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 24) && (ddic_x < 162))
 				dsi_display->panel->ddic_check_info = 1;
 		} else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
 	case 5:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 33) && (ddic_x < 268)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+			(ddic_x > 33) && (ddic_x < 268))
 			dsi_display->panel->ddic_check_info = 1;
-		} else if(strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
-			if((panel_tool == 0) && (ddic_x > 46) && (ddic_x < 140))
+		else if (strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
+			if ((panel_tool == 0) && (ddic_x > 46) && (ddic_x < 140))
 				dsi_display->panel->ddic_check_info = 1;
-			if(((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 23) && (ddic_x < 163))
+			if (((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 23) && (ddic_x < 163))
 				dsi_display->panel->ddic_check_info = 1;
 		} else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
 	case 6:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 41) && (ddic_x < 261)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+			(ddic_x > 41) && (ddic_x < 261))
 			dsi_display->panel->ddic_check_info = 1;
-		} else if(strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
-			if((panel_tool == 0) && (ddic_x > 54) && (ddic_x < 132))
+		else if (strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
+			if ((panel_tool == 0) && (ddic_x > 54) && (ddic_x < 132))
 				dsi_display->panel->ddic_check_info = 1;
-			if(((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 30) && (ddic_x < 156))
+			if (((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 30) && (ddic_x < 156))
 				dsi_display->panel->ddic_check_info = 1;
 		} else
 			dsi_display->panel->ddic_check_info = 0;
@@ -750,20 +741,20 @@ int dsi_display_get_ddic_check_info(struct drm_connector *connector)
 
 	case 7:
 		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 57) && (ddic_x < 245)) {
+			(ddic_x > 57) && (ddic_x < 245))
 			dsi_display->panel->ddic_check_info = 1;
-		} else if(strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
-			if(((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 45) && (ddic_x < 141))
+		else if (strcmp(dsi_display->panel->name, "samsung ana6706 dsc cmd mode panel") == 0) {
+			if (((panel_tool == 1) || (panel_tool == 2)) && (ddic_x > 45) && (ddic_x < 141))
 				dsi_display->panel->ddic_check_info = 1;
 		} else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
 	case 8:
-		if((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
-		(ddic_x > 119) && (ddic_x < 183)) {
+		if ((strcmp(dsi_display->panel->name, "samsung ana6705 fhd cmd mode dsc dsi panel") == 0) &&
+		(ddic_x > 119) && (ddic_x < 183))
 			dsi_display->panel->ddic_check_info = 1;
-		} else
+		else
 			dsi_display->panel->ddic_check_info = 0;
 		break;
 
@@ -850,9 +841,9 @@ int dsi_display_read_serial_number(struct dsi_display *dsi_display,
 	DSI_ERR("Production info is 0x%X\n", panel->panel_production_info);
 
 	count = mode->priv_info->cmd_sets[DSI_CMD_SET_LEVEL2_KEY_DISABLE].count;
-	if (!count) {
+	if (!count)
 		DSI_ERR("This panel does not support level2 key disable command\n");
-	} else {
+	else {
 		rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_LEVEL2_KEY_DISABLE);
 		if (rc) {
 			DSI_ERR("Failed to send DSI_CMD_SET_LEVEL2_KEY_DISABLE commands\n");
@@ -988,9 +979,8 @@ int dsi_display_get_serial_number(struct drm_connector *connector)
 			dsi_display->name, rc);
 			goto error;
 		}
-	} else {
+	} else
 		DSI_ERR("This panel not support serial number.\n");
-	}
 
 error:
 	mutex_unlock(&dsi_display->display_lock);
@@ -1378,7 +1368,7 @@ int dsi_display_read_panel_reg(struct dsi_display *dsi_display, unsigned char re
 	dsi = &dsi_display->panel->mipi_device;
 
 	err = oplus_mipi_dcs_read_buffer(dsi, registers, buf, count);
-	if(err < 0)
+	if (err < 0)
 		return err;
 
 	return 0;
@@ -1408,10 +1398,11 @@ int dsi_display_write_panel_reg(struct dsi_display *dsi_display, unsigned char r
 		DSI_ERR("Invalid params\n");
 		return -EINVAL;
 	}
-	if(count > 0) {
+
+	if (count > 0) {
 		size = 1 + count ;
 		tx_buf =  kmalloc(size, GFP_KERNEL);
-		if(!tx_buf){
+		if (!tx_buf) {
 			DSI_ERR("tx_buf kmalloc fail\n");
 			return -1;
 		}
@@ -1425,7 +1416,7 @@ int dsi_display_write_panel_reg(struct dsi_display *dsi_display, unsigned char r
 	dsi = &dsi_display->panel->mipi_device;
 
 	err = oplus_mipi_dcs_write_buffer(dsi, tx_buf, 3);
-	if(count > 0)
+	if (count > 0)
 		kfree(tx_buf);
 
 	return err;

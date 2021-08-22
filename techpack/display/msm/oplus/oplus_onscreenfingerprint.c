@@ -74,7 +74,7 @@ int cur_brightness = 0;
 static int oneplus_panel_alpha = 0;
 u8 alpha_debug_mode = 0;
 
-static int interpolate(int x, int xa, int xb, int ya, int yb)
+static inline int interpolate(int x, int xa, int xb, int ya, int yb)
 {
 	int bf, factor, plus;
 	int sub = 0;
@@ -82,6 +82,7 @@ static int interpolate(int x, int xa, int xb, int ya, int yb)
 	bf = 2 * (yb - ya) * (x - xa) / (xb - xa);
 	factor = bf / 2;
 	plus = bf % 2;
+
 	if ((xa - xb) && (yb - ya))
 		sub = 2 * (x - xa) * (x - xb) / (yb - ya) / (xa - xb);
 
@@ -94,82 +95,78 @@ static int brightness_to_alpha(int brightness)
 	struct oplus_brightness_alpha *lut = NULL;
 	int count = 0;
  	int i = 0;
-	int alpha;
 
-	if (!display) {
+	if (!display)
 		return 0;
-	}
 
 	if (display->panel->ba_seq && display->panel->ba_count) {
 		count = display->panel->ba_count;
 		lut = display->panel->ba_seq;
-
 	} else {
 		count = ARRAY_SIZE(brightness_alpha_lut);
 		lut = brightness_alpha_lut;
 	}
 
- 	for (i = 0; i < count; i++){
+ 	for (i = 0; i < count; i++) {
  		if (lut[i].brightness >= brightness)
  			break;
  	}
 
-	if (i == 0) {
-		alpha = lut[0].alpha;
-	} else if (i == count) {
-		alpha = lut[count - 1].alpha;
-	} else
-		alpha = interpolate(brightness, lut[i - 1].brightness,
-				    lut[i].brightness, lut[i - 1].alpha,
-				    lut[i].alpha);
-	return alpha;
+	if (i == 0)
+		return lut[0].alpha;
+
+	if (i == count)
+		return lut[count - 1].alpha;
+
+	return interpolate(brightness,
+			lut[i - 1].brightness,
+			lut[i].brightness,
+			lut[i - 1].alpha,
+			lut[i].alpha);
 }
 
 static int bl_to_alpha_dc(int brightness)
 {
+	static const int level = ARRAY_SIZE(brightness_alpha_lut_dc);
 	struct dsi_display *display = get_main_display();
 	struct oplus_brightness_alpha *lut_dc = NULL;
 	int count = 0;
-	int level = ARRAY_SIZE(brightness_alpha_lut_dc);
 	int i = 0;
-	int alpha;
 
-	if (!display) {
+	if (!display)
 		return 0;
-	}
 
 	if (display->panel->dc_ba_seq && display->panel->dc_ba_count) {
 		count = display->panel->dc_ba_count;
 		lut_dc = display->panel->dc_ba_seq;
-
 	} else {
-		count = ARRAY_SIZE(brightness_alpha_lut_dc);
+		count = level;
 		lut_dc = brightness_alpha_lut_dc;
 	}
 
 	for (i = 0; i < count; i++) {
-		if (brightness_alpha_lut_dc[i].brightness >= brightness) {
+		if (brightness_alpha_lut_dc[i].brightness >= brightness)
 			break;
-		}
 	}
 
-	if (i == 0) {
-		alpha = lut_dc[0].alpha;
-	} else if (i == level) {
-		alpha = lut_dc[level - 1].alpha;
-	} else
-		alpha = interpolate(brightness,
-				    lut_dc[i - 1].brightness, lut_dc[i].brightness,
-				    lut_dc[i - 1].alpha, lut_dc[i].alpha);
+	if (i == 0)
+		return lut_dc[0].alpha;
 
-	return alpha;
+	if (i == level)
+		return lut_dc[level - 1].alpha;
+
+	return interpolate(brightness,
+			lut_dc[i - 1].brightness,
+			lut_dc[i].brightness,
+			lut_dc[i - 1].alpha,
+			lut_dc[i].alpha);
 }
 
 int brightness_to_alpha_debug(int fb, int fa, int ab, int aa, int cb)
 {
-	if(cb == fb)
+	if (cb == fb)
 		return fa;
-	else if(cb == ab)
+	else if (cb == ab)
 		return aa;
 	else
 		return interpolate(cb, fb, ab, fa, aa);
@@ -184,9 +181,8 @@ int oneplus_get_panel_brightness_to_alpha(void)
 
 	if (oneplus_panel_alpha)
 		return oneplus_panel_alpha;
-	else if(alpha_debug_mode) {
+	else if (alpha_debug_mode)
 		return brightness_to_alpha_debug(front_brightness, front_alpha, after_brightness, after_alpha, cur_brightness);
-	}
 
 	if (display->panel->dim_status)
 		return brightness_to_alpha(display->panel->hbm_backlight);
@@ -342,11 +338,11 @@ int dsi_panel_parse_oplus_config(struct dsi_panel *panel)
 {
 	int rc = 0;
 	rc = dsi_panel_parse_oplus_dc_config(panel);
-	if(rc)
+	if (rc)
 		DSI_ERR("failed to parse dc config, rc=%d\n", rc);
 
 	rc = dsi_panel_parse_oplus_fod_config(panel);
-	if(rc)
+	if (rc)
 		DSI_ERR("failed to parse fod config, rc=%d\n", rc);
 
 	return 0;
@@ -356,8 +352,8 @@ static void Split_StrtoInt(const char* Src, int *Dest, int count) {
 	int i;
 	int len = 0;
 
-	for(i=0; i<count; i++) {
-		if(KEY_SPACE_OPLUS == Src[i] || KEY_LINEFEED_OPLUS == Src[i]) {
+	for (i = 0; i < count; i++) {
+		if (KEY_SPACE_OPLUS == Src[i] || KEY_LINEFEED_OPLUS == Src[i]) {
 			len++;
 		} else {
 			Dest[len] = Dest[len]*10 +(Src[i] - '0');
@@ -393,7 +389,7 @@ int dsi_panel_brightness_alpha_debug(struct drm_connector *connector, const char
   		goto error;
 
 	length = 0;
-	for(i=0; i<count; i++) {
+	for ( i= 0; i < count; i++) {
 		if(KEY_SPACE_OPLUS == buf[i] || KEY_LINEFEED_OPLUS == buf[i])
 			length++;
 	}
@@ -402,7 +398,7 @@ int dsi_panel_brightness_alpha_debug(struct drm_connector *connector, const char
 	memset(data, 0, length*sizeof(int)) ;
 	Split_StrtoInt(buf, data, count);
 
-	if(ALPHA_RANGE_DEBUG == length) {
+	if (ALPHA_RANGE_DEBUG == length) {
 		front_brightness = data[0];
 		front_alpha = data[1];
 		after_brightness = data[2];
@@ -411,7 +407,7 @@ int dsi_panel_brightness_alpha_debug(struct drm_connector *connector, const char
 		alpha_debug_mode = 1;
 		pr_err("front_brightness=%d front_alpha=%d after_brightness=%d after_alpha=%d cur_brightness=%d\n",
 			front_brightness, front_alpha, after_brightness, after_alpha, cur_brightness);
-	} else if(ALPHA_DEFAULT_DEBUG == length) {
+	} else if (ALPHA_DEFAULT_DEBUG == length) {
 		oneplus_panel_alpha = data[0];
 		DSI_ERR("dsi_panel_brightness_alpha_debug oneplus_panel_alpha=%d\n", oneplus_panel_alpha);
 		goto error;

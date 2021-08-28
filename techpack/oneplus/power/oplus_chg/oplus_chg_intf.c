@@ -27,7 +27,7 @@
 enum capacity_level {
 	CAPACITY_LEVEL_UNKNOWN,
 	CAPACITY_LEVEL_CRITICAL,
-	CAPACITY_LEVEL_LOW,
+	//CAPACITY_LEVEL_LOW,
 	CAPACITY_LEVEL_NORMAL,
 	CAPACITY_LEVEL_HIGH,
 	CAPACITY_LEVEL_FULL,
@@ -1644,8 +1644,10 @@ static int oplus_chg_intf_batt_get_prop(struct oplus_chg_mod *ocm,
 			pval->intval = CAPACITY_LEVEL_UNKNOWN;
 		else if (rc == 0)
 			pval->intval = CAPACITY_LEVEL_CRITICAL;
+/*
 		else if (rc <= 15)
 			pval->intval = CAPACITY_LEVEL_LOW;
+*/
 		else if (rc <= 85)
 			pval->intval = CAPACITY_LEVEL_NORMAL;
 		else if (rc < 100)

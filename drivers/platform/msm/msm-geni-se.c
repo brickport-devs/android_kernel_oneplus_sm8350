@@ -143,7 +143,7 @@ early_param("console", parse_console_config);
  */
 unsigned int geni_read_reg_nolog(void __iomem *base, int offset)
 {
-	return readl_relaxed_no_log(base + offset);
+	return readl_relaxed(base + offset);
 }
 EXPORT_SYMBOL(geni_read_reg_nolog);
 
@@ -155,7 +155,7 @@ EXPORT_SYMBOL(geni_read_reg_nolog);
  */
 void geni_write_reg_nolog(unsigned int value, void __iomem *base, int offset)
 {
-	return writel_relaxed_no_log(value, (base + offset));
+	return writel_relaxed(value, (base + offset));
 }
 EXPORT_SYMBOL(geni_write_reg_nolog);
 

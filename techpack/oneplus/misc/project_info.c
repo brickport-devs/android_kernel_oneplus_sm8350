@@ -2,33 +2,33 @@
  *such as project name, hardware ID
  */
 
+#include <linux/export.h>
+#include <linux/module.h>
+#include <linux/err.h>
+#include <linux/of.h>
+#include <linux/sys_soc.h>
+#include <linux/slab.h>
+#include <linux/stat.h>
+#include <linux/string.h>
+#include <linux/types.h>
 #include <linux/oem/project_info.h>
+#include <linux/soc/qcom/smem.h>
+#include <linux/gpio.h>
+#include <soc/qcom/socinfo.h>
+#include <linux/of_gpio.h>
+#include <linux/platform_device.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/pinctrl/pinctrl.h>
 #include <linux/pinctrl/machine.h>
 #include <linux/soc/qcom/smem.h>
-#include <linux/err.h>
-#include <linux/export.h>
-#include <linux/gpio.h>
-#include <linux/module.h>
-#include <linux/of_gpio.h>
-#include <linux/of.h>
-#include <linux/platform_device.h>
 #include <linux/pstore.h>
-#include <linux/slab.h>
-#include <linux/stat.h>
-#include <linux/string.h>
-#include <linux/sys_soc.h>
-#include <linux/types.h>
-#include <soc/qcom/socinfo.h>
+#include <linux/oem/device_info.h>
 
 static struct component_info component_info_desc[COMPONENT_MAX];
 static struct kobject *project_info_kobj;
 static struct project_info *project_info_desc;
 
-#ifndef CONFIG_QGKI
-int a_board_val = 0;
-#endif
+extern int a_board_val;
 static struct kobject *component_info;
 static ssize_t project_info_get(struct kobject *kobj,
 				struct kobj_attribute *attr, char *buf);

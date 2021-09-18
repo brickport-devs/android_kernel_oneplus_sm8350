@@ -100,9 +100,7 @@ static int horae_shell_probe(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto err_remove_id;
 	}
-#ifdef CONFIG_HOUSTON
-	ht_register_thermal_zone_device(tz_dev);
-#endif
+
 	hst->tzd = tz_dev;
 
 	platform_set_drvdata(pdev, hst);

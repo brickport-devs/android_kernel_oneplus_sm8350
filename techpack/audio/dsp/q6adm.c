@@ -43,6 +43,7 @@
 #endif
 
 #define SESSION_TYPE_RX 0
+#define COPP_VOL_DEFAULT 0x2000
 
 /* ENUM for adm_status */
 enum adm_cal_status {
@@ -111,6 +112,7 @@ struct adm_ctl {
 	int tx_port_id;
 	bool hyp_assigned;
 	int fnn_app_type;
+	bool is_channel_swapped;
 };
 
 static struct adm_ctl			this_adm;
@@ -288,7 +290,7 @@ static int adm_get_copp_id(int port_idx, int copp_idx)
 }
 
 static int adm_get_idx_if_single_copp_exists(int port_idx,
-			int topology, int mode,
+			int topology,
 			int rate, int bit_width,
 			uint32_t copp_token)
 {
@@ -299,8 +301,6 @@ static int adm_get_idx_if_single_copp_exists(int port_idx,
 	for (idx = 0; idx < MAX_COPPS_PER_PORT; idx++)
 		if ((topology ==
 			atomic_read(&this_adm.copp.topology[port_idx][idx])) &&
-			(mode ==
-			 atomic_read(&this_adm.copp.mode[port_idx][idx])) &&
 			(rate ==
 			 atomic_read(&this_adm.copp.rate[port_idx][idx])) &&
 			(bit_width ==
@@ -322,7 +322,7 @@ static int adm_get_idx_if_copp_exists(int port_idx, int topology, int mode,
 
 	if (copp_token)
 		return adm_get_idx_if_single_copp_exists(port_idx,
-				topology, mode,
+				topology,
 				rate, bit_width,
 				copp_token);
 
@@ -4312,7 +4312,6 @@ EXPORT_SYMBOL(adm_close);
 int send_rtac_audvol_cal(void)
 {
 	int ret = 0;
-	int ret2 = 0;
 	int i = 0;
 	int copp_idx, port_idx, acdb_id, app_id, path;
 	struct cal_block_data *cal_block = NULL;
@@ -4358,7 +4357,7 @@ int send_rtac_audvol_cal(void)
 				continue;
 			}
 
-			ret2 = adm_remap_and_send_cal_block(ADM_RTAC_AUDVOL_CAL,
+			ret = adm_remap_and_send_cal_block(ADM_RTAC_AUDVOL_CAL,
 				rtac_adm_data.device[i].afe_port,
 				copp_idx, cal_block,
 				atomic_read(&this_adm.copp.
@@ -4367,13 +4366,12 @@ int send_rtac_audvol_cal(void)
 				audvol_cal_info->acdb_id,
 				atomic_read(&this_adm.copp.
 				rate[port_idx][copp_idx]));
-			if (ret2 < 0) {
+			if (ret < 0) {
 				pr_debug("%s: remap and send failed for copp Id %d, acdb id %d, app type %d, path %d\n",
 					__func__, rtac_adm_data.device[i].copp,
 					audvol_cal_info->acdb_id,
 					audvol_cal_info->app_type,
 					audvol_cal_info->path);
-				ret = ret2;
 			}
 		}
 	}
@@ -5215,6 +5213,7 @@ int adm_wait_timeout(int port_id, int copp_idx, int wait_time)
 	pr_debug("%s: return %d\n", __func__, ret);
 	if (ret != 0)
 		ret = -EINTR;
+
 end:
 	pr_debug("%s: return %d--\n", __func__, ret);
 	return ret;
@@ -5275,8 +5274,10 @@ int adm_store_cal_data(int port_id, int copp_idx, int path, int perf_mode,
 	mutex_lock(&this_adm.cal_data[cal_index]->lock);
 	cal_block = adm_find_cal(cal_index, get_cal_path(path), app_type,
 				acdb_id, sample_rate);
-	if (cal_block == NULL)
+	if (cal_block == NULL) {
+		pr_err("%s: can't find cal block!\n", __func__);
 		goto unlock;
+	}
 
 	if (cal_block->cal_data.size <= 0) {
 		pr_debug("%s: No ADM cal send for port_id = 0x%x!\n",
@@ -5476,6 +5477,13 @@ int adm_swap_speaker_channels(int port_id, int copp_idx,
 			(uint16_t) PCM_CHANNEL_FR;
 	}
 
+	if(spk_swap || this_adm.is_channel_swapped) {
+		/* Before applying swap channel, mute the device to avoid pop */
+		ret = adm_set_volume(port_id, copp_idx, 0);
+		/* Add delay after mute as per hw requirement */
+		msleep(50);
+	}
+
 	ret = adm_pack_and_set_one_pp_param(port_id, copp_idx, param_hdr,
 					    (u8 *) &mfc_cfg);
 	if (ret < 0) {
@@ -5483,6 +5491,12 @@ int adm_swap_speaker_channels(int port_id, int copp_idx,
 		       __func__, port_id, ret);
 		return ret;
 	}
+
+	if(spk_swap || this_adm.is_channel_swapped) {
+		/* After applying swap channel, reset to default */
+		ret = adm_set_volume(port_id, copp_idx, COPP_VOL_DEFAULT);
+	}
+	this_adm.is_channel_swapped = spk_swap;
 
 	pr_debug("%s: mfc_cfg Set params returned success", __func__);
 	return 0;
@@ -5865,6 +5879,7 @@ int __init adm_init(void)
 	this_adm.tx_port_id = -1;
 	this_adm.hyp_assigned = false;
 	this_adm.fnn_app_type = -1;
+	this_adm.is_channel_swapped = false;
 	init_waitqueue_head(&this_adm.matrix_map_wait);
 	init_waitqueue_head(&this_adm.adm_wait);
 	mutex_init(&this_adm.adm_apr_lock);

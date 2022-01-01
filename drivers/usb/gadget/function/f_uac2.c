@@ -16,7 +16,6 @@
 
 /* Keep everyone on toes */
 #define USB_XFERS	8
-
 /* UAC2 spec: 4.1 Audio Channel Cluster Descriptor */
 #define UAC2_CHANNEL_MASK 0x07FFFFFF
 

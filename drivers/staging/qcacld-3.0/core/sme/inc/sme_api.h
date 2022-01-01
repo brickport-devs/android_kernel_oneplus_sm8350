@@ -364,6 +364,20 @@ sme_nss_chains_update(mac_handle_t mac_handle,
 		      uint8_t vdev_id);
 
 /**
+ * sme_update_bfer_caps_as_per_nss_chains() - Update beamformer caps as per nss
+ * chains.
+ * @mac_handle: The handle returned by mac_open
+ * @cfg: wma target config
+ *
+ * This API will update beamformer capability as per nss chains
+ *
+ * Return: None
+ */
+void
+sme_update_bfer_caps_as_per_nss_chains(mac_handle_t mac_handle,
+				       struct wma_tgt_cfg *cfg);
+
+/**
  * sme_vdev_create() - Create vdev for given persona
  * @mac_handle: The handle returned by mac_open
  * @vdev_params: params required for vdev creation
@@ -655,6 +669,30 @@ QDF_STATUS sme_roam_set_psk_pmk(mac_handle_t mac_handle,
  */
 QDF_STATUS sme_set_pmk_cache_ft(mac_handle_t mac_handle, uint8_t session_id,
 				tPmkidCacheInfo *pmk_cache);
+
+/**
+ * sme_roam_events_register_callback() - Register roam events callback
+ * @mac_handle: Opaque handle to the MAC context
+ * @roam_rt_stats_cb: Function to be invoked for roam events stats
+ *
+ * This function will register a callback for roams events stats.
+ *
+ * Return: void
+ */
+void sme_roam_events_register_callback(mac_handle_t mac_handle,
+				       void (*roam_rt_stats_cb)(
+				hdd_handle_t hdd_handle,
+				struct mlme_roam_debug_info *roam_stats));
+
+/**
+ * sme_roam_events_deregister_callback() - DeRegister roam events callback
+ * @mac_handle: Opaque handle to the MAC context
+ *
+ * This function will deregister the callback of roams events stats.
+ *
+ * Return: void
+ */
+void sme_roam_events_deregister_callback(mac_handle_t mac_handle);
 #else
 static inline
 void sme_get_pmk_info(mac_handle_t mac_handle, uint8_t session_id,
@@ -689,6 +727,17 @@ QDF_STATUS sme_set_pmk_cache_ft(mac_handle_t mac_handle, uint8_t session_id,
 {
 	return QDF_STATUS_SUCCESS;
 }
+
+static inline void
+sme_roam_events_register_callback(mac_handle_t mac_handle,
+				  void (*roam_rt_stats_cb)(
+				hdd_handle_t hdd_handle,
+				struct mlme_roam_debug_info *roam_stats))
+{}
+
+static inline
+void sme_roam_events_deregister_callback(mac_handle_t mac_handle)
+{}
 #endif
 
 /**

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -1232,8 +1233,14 @@ wlansap_get_csa_chanwidth_from_phymode(struct sap_context *sap_context,
 				       struct ch_params *tgt_ch_params)
 {
 	enum phy_ch_width ch_width, concurrent_bw = 0;
-	struct mac_context *mac = sap_get_mac_context();
+	struct mac_context *mac;
 	struct ch_params ch_params = {0};
+
+	mac = sap_get_mac_context();
+	if (!mac) {
+		sap_err("Invalid MAC context");
+		return CH_WIDTH_20MHZ;
+	}
 
 	if (WLAN_REG_IS_24GHZ_CH_FREQ(chan_freq)) {
 		/*
@@ -3221,6 +3228,11 @@ qdf_freq_t wlansap_get_chan_band_restrict(struct sap_context *sap_ctx,
 		return wlansap_get_safe_channel_from_pcl_and_acs_range(sap_ctx);
 	} else if (wlan_reg_is_passive_for_freq(mac->pdev,
 						sap_ctx->chan_freq)) {
+		sap_ctx->chan_freq_before_switch_band = sap_ctx->chan_freq;
+		sap_ctx->chan_width_before_switch_band =
+			sap_ctx->ch_params.ch_width;
+		sap_debug("Save chan info before switch: %d, width: %d",
+			  sap_ctx->chan_freq, sap_ctx->ch_params.ch_width);
 		sap_debug("channel is passive");
 		*csa_reason = CSA_REASON_CHAN_PASSIVE;
 		return wlansap_get_safe_channel_from_pcl_for_sap(sap_ctx);

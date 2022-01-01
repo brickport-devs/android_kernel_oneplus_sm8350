@@ -129,8 +129,6 @@ extern const struct nla_policy wlan_hdd_wisa_cmd_policy[
 #define VENDOR1_AP_OUI_TYPE "\x00\xE0\x4C"
 #define VENDOR1_AP_OUI_TYPE_SIZE 3
 
-#define WLAN_BSS_MEMBERSHIP_SELECTOR_VHT_PHY 126
-#define WLAN_BSS_MEMBERSHIP_SELECTOR_HT_PHY 127
 #define BASIC_RATE_MASK   0x80
 #define RATE_MASK         0x7f
 
@@ -433,8 +431,17 @@ void hdd_reg_notifier(struct wiphy *wiphy,
 QDF_STATUS wlan_hdd_validate_operation_channel(struct hdd_adapter *adapter,
 					       uint32_t ch_freq);
 
-void hdd_select_cbmode(struct hdd_adapter *adapter, uint32_t oper_freq,
-		       struct ch_params *ch_params);
+/**
+ * hdd_select_cbmode() - select channel bonding mode
+ * @adapter: Pointer to adapter
+ * @oper_freq: Operating frequency (MHz)
+ * @sec_ch_2g_freq: secondary channel freq
+ * @ch_params: channel info struct to populate
+ *
+ * Return: none
+ */
+void hdd_select_cbmode(struct hdd_adapter *adapter, qdf_freq_t oper_freq,
+		       qdf_freq_t sec_ch_2g_freq, struct ch_params *ch_params);
 
 /**
  * wlan_hdd_is_ap_supports_immediate_power_save() - to find certain vendor APs

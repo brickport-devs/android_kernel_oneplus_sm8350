@@ -83,6 +83,8 @@ static uint16_t msm_ec_ref_ch_weights[PCM_FORMAT_MAX_NUM_CHANNEL_V8]
 				[PCM_FORMAT_MAX_NUM_CHANNEL_V8];
 
 static uint32_t voc_session_id = ALL_SESSION_VSID;
+static int vi_lch_port;
+static int vi_rch_port;
 static int msm_route_ext_ec_ref;
 static bool is_custom_stereo_on;
 static bool is_ds2_on;
@@ -3778,7 +3780,7 @@ static int msm_routing_lsm_func_put(struct snd_kcontrol *kcontrol,
 	return afe_port_set_mad_type(port_id, mad_type);
 }
 
-static const char *const adm_override_chs_text[] = {"Zero", "One", "Two"};
+static const char *const adm_override_chs_text[] = {"Zero", "One", "Two", "Three", "Four"};
 
 static SOC_ENUM_SINGLE_EXT_DECL(adm_override_chs,
 				adm_override_chs_text);
@@ -3793,6 +3795,8 @@ static int msm_routing_adm_get_backend_idx(struct snd_kcontrol *kcontrol)
 		backend_id = MSM_BACKEND_DAI_SLIMBUS_9_TX;
 	} else if (strnstr(kcontrol->id.name, "SLIM7_TX", sizeof("SLIM7_TX"))) {
 		backend_id = MSM_BACKEND_DAI_SLIMBUS_7_TX;
+	} else if (strnstr(kcontrol->id.name, "TERT_TDM_TX_0", sizeof("TERT_TDM_TX_0"))) {
+		backend_id = MSM_BACKEND_DAI_TERT_TDM_TX_0;
 	} else {
 		pr_err("%s: unsupported backend id: %s",
 			__func__, kcontrol->id.name);
@@ -3847,6 +3851,9 @@ static const struct snd_kcontrol_new adm_channel_config_controls[] = {
 			msm_routing_adm_channel_config_get,
 			msm_routing_adm_channel_config_put),
 	SOC_ENUM_EXT("SLIM7_TX ADM Channels", adm_override_chs,
+			msm_routing_adm_channel_config_get,
+			msm_routing_adm_channel_config_put),
+	SOC_ENUM_EXT("TERT_TDM_TX_0 ADM Channels", adm_override_chs,
 			msm_routing_adm_channel_config_get,
 			msm_routing_adm_channel_config_put),
 };
@@ -32454,33 +32461,33 @@ static int spkr_prot_put_vi_lch_port(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
 	int ret = 0;
-	int item;
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
 
 	pr_debug("%s item is %d\n", __func__,
 		   ucontrol->value.enumerated.item[0]);
 	mutex_lock(&routing_lock);
-	item = ucontrol->value.enumerated.item[0];
-	if (item < e->items) {
+	vi_lch_port = ucontrol->value.enumerated.item[0];
+	if (vi_lch_port < e->items) {
 		pr_debug("%s RX DAI ID %d TX DAI id %d\n",
-			__func__, e->shift_l, e->values[item]);
+			__func__, e->shift_l, e->values[vi_lch_port]);
 		if (e->shift_l < MSM_BACKEND_DAI_MAX &&
-			e->values[item] < MSM_BACKEND_DAI_MAX)
+			e->values[vi_lch_port] < MSM_BACKEND_DAI_MAX)
 			/* Enable feedback TX path */
 			ret = afe_spk_prot_feed_back_cfg(
-			   msm_bedais[e->values[item]].port_id,
+			   msm_bedais[e->values[vi_lch_port]].port_id,
 			   msm_bedais[e->shift_l].port_id, 1, 0, 1);
 		else {
 			pr_debug("%s values are out of range item %d\n",
-			__func__, e->values[item]);
+			__func__, e->values[vi_lch_port]);
 			/* Disable feedback TX path */
-			if (e->values[item] == MSM_BACKEND_DAI_MAX)
+			if (e->values[vi_lch_port] == MSM_BACKEND_DAI_MAX)
 				ret = afe_spk_prot_feed_back_cfg(0, 0, 0, 0, 0);
 			else
 				ret = -EINVAL;
 		}
 	} else {
-		pr_err("%s item value is out of range item\n", __func__);
+		pr_err("%s item value is out of range items = %d\n", __func__,
+			vi_lch_port);
 		ret = -EINVAL;
 	}
 	mutex_unlock(&routing_lock);
@@ -32491,35 +32498,35 @@ static int spkr_prot_put_vi_rch_port(struct snd_kcontrol *kcontrol,
 		struct snd_ctl_elem_value *ucontrol)
 {
 	int ret = 0;
-	int item;
 	struct soc_enum *e = (struct soc_enum *)kcontrol->private_value;
 
 	pr_debug("%s item is %d\n", __func__,
 			ucontrol->value.enumerated.item[0]);
 	mutex_lock(&routing_lock);
-	item = ucontrol->value.enumerated.item[0];
-	if (item < e->items) {
+	vi_rch_port = ucontrol->value.enumerated.item[0];
+	if (vi_rch_port < e->items) {
 		pr_debug("%s RX DAI ID %d TX DAI id %d\n",
-				__func__, e->shift_l, e->values[item]);
+				__func__, e->shift_l, e->values[vi_rch_port]);
 		if (e->shift_l < MSM_BACKEND_DAI_MAX &&
-				e->values[item] < MSM_BACKEND_DAI_MAX)
+				e->values[vi_rch_port] < MSM_BACKEND_DAI_MAX)
 			/* Enable feedback TX path */
 			ret = afe_spk_prot_feed_back_cfg(
-					msm_bedais[e->values[item]].port_id,
+					msm_bedais[e->values[vi_rch_port]].port_id,
 					msm_bedais[e->shift_l].port_id,
 					1, 1, 1);
 		else {
 			pr_debug("%s values are out of range item %d\n",
-					__func__, e->values[item]);
+					__func__, e->values[vi_rch_port]);
 			/* Disable feedback TX path */
-			if (e->values[item] == MSM_BACKEND_DAI_MAX)
+			if (e->values[vi_rch_port] == MSM_BACKEND_DAI_MAX)
 				ret = afe_spk_prot_feed_back_cfg(0,
 						0, 0, 0, 0);
 			else
 				ret = -EINVAL;
 		}
 	} else {
-		pr_err("%s item value is out of range item\n", __func__);
+		pr_err("%s item value is out of range items = %d\n", __func__,
+			vi_rch_port);
 		ret = -EINVAL;
 	}
 	mutex_unlock(&routing_lock);
@@ -32529,6 +32536,7 @@ static int spkr_prot_put_vi_rch_port(struct snd_kcontrol *kcontrol,
 static int spkr_prot_get_vi_lch_port(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
+	ucontrol->value.enumerated.item[0] = vi_lch_port;
 	pr_debug("%s\n", __func__);
 	return 0;
 }
@@ -32537,7 +32545,7 @@ static int spkr_prot_get_vi_rch_port(struct snd_kcontrol *kcontrol,
 		struct snd_ctl_elem_value *ucontrol)
 {
 	pr_debug("%s\n", __func__);
-	ucontrol->value.enumerated.item[0] = 0;
+	ucontrol->value.enumerated.item[0] = vi_rch_port;
 	return 0;
 }
 
@@ -42215,20 +42223,30 @@ static int get_drift_src_idx(int drift_src)
 {
 	if (drift_src == DRIFT_SRC_SW)
 		return DRIFT_SRC_SW;
-	else if ((drift_src >= AFE_PORT_ID_PRIMARY_TDM_RX)
+	else if (((drift_src >= AFE_PORT_ID_PRIMARY_TDM_RX)
 		&& (drift_src <= AFE_PORT_ID_PRIMARY_TDM_TX_7))
+		|| (drift_src == AFE_PORT_ID_PRIMARY_MI2S_RX)
+		|| (drift_src == AFE_PORT_ID_PRIMARY_MI2S_TX))
 		return DRIFT_SRC_AFE_PRI;
-	else if ((drift_src >= AFE_PORT_ID_SECONDARY_TDM_RX)
+	else if (((drift_src >= AFE_PORT_ID_SECONDARY_TDM_RX)
 		&& (drift_src <= AFE_PORT_ID_SECONDARY_TDM_TX_7))
+		|| (drift_src == AFE_PORT_ID_SECONDARY_MI2S_RX)
+		|| (drift_src == AFE_PORT_ID_SECONDARY_MI2S_TX))
 		return DRIFT_SRC_AFE_SEC;
-	else if ((drift_src >= AFE_PORT_ID_TERTIARY_TDM_RX)
+	else if (((drift_src >= AFE_PORT_ID_TERTIARY_TDM_RX)
 		&& (drift_src <= AFE_PORT_ID_TERTIARY_TDM_TX_7))
+		|| (drift_src == AFE_PORT_ID_TERTIARY_MI2S_RX)
+		|| (drift_src == AFE_PORT_ID_TERTIARY_MI2S_TX))
 		return DRIFT_SRC_AFE_TERT;
-	else if ((drift_src >= AFE_PORT_ID_QUATERNARY_TDM_RX)
+	else if (((drift_src >= AFE_PORT_ID_QUATERNARY_TDM_RX)
 		&& (drift_src <= AFE_PORT_ID_QUATERNARY_TDM_TX_7))
+		|| (drift_src == AFE_PORT_ID_QUATERNARY_MI2S_RX)
+		|| (drift_src == AFE_PORT_ID_QUATERNARY_MI2S_TX))
 		return DRIFT_SRC_AFE_QUAT;
-	else if ((drift_src >= AFE_PORT_ID_QUINARY_TDM_RX)
+	else if (((drift_src >= AFE_PORT_ID_QUINARY_TDM_RX)
 		&& (drift_src <= AFE_PORT_ID_QUINARY_TDM_TX_7))
+		|| (drift_src == AFE_PORT_ID_QUINARY_MI2S_RX)
+		|| (drift_src == AFE_PORT_ID_QUINARY_MI2S_TX))
 		return DRIFT_SRC_AFE_QUIN;
 	else
 		return -EINVAL;
@@ -42357,8 +42375,7 @@ static int asrc_get_module_location(struct asrc_module_config_params *params,
 	unsigned long copp = -1;
 	bool copp_is_found = false;
 	struct msm_pcm_routing_bdai_data *bedai = NULL;
-	int port_type = (dir == SESSION_TYPE_RX) ? MSM_AFE_PORT_TYPE_RX :
-			       MSM_AFE_PORT_TYPE_TX;
+	int port_type = -1;
 
 	mutex_lock(&routing_lock);
 
@@ -42372,6 +42389,10 @@ static int asrc_get_module_location(struct asrc_module_config_params *params,
 	dir = params->dir;
 	be_id = params->be_id;
 	bedai = &msm_bedais[be_id];
+
+	port_type = (dir == SESSION_TYPE_RX) ? MSM_AFE_PORT_TYPE_RX :
+			  MSM_AFE_PORT_TYPE_TX;
+
 	if (afe_get_port_type(bedai->port_id) != port_type) {
 		pr_err("%s: port_type not match: be_dai %d type %d\n",
 			__func__, be_id, port_type);

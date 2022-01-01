@@ -557,6 +557,7 @@ static void *def_wcd_mbhc_cal(void);
 static void *def_rouleur_mbhc_cal(void);
 
 static int msm_int_audrx_init(struct snd_soc_pcm_runtime*);
+static int msm_aux_codec_init(struct snd_soc_pcm_runtime*);
 
 /*
  * Need to report LINEIN
@@ -930,8 +931,6 @@ static int usb_audio_tx_format_get(struct snd_kcontrol *kcontrol,
 static int usb_audio_tx_format_put(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
-	int rc = 0;
-
 	switch (ucontrol->value.integer.value[0]) {
 	case 3:
 		usb_tx_cfg.bit_format = SNDRV_PCM_FORMAT_S32_LE;
@@ -951,7 +950,7 @@ static int usb_audio_tx_format_put(struct snd_kcontrol *kcontrol,
 		 __func__, usb_tx_cfg.bit_format,
 		 ucontrol->value.integer.value[0]);
 
-	return rc;
+	return 0;
 }
 
 static int usb_audio_rx_ch_get(struct snd_kcontrol *kcontrol,
@@ -2098,7 +2097,8 @@ static int msm_mi2s_set_sclk(struct snd_pcm_substream *substream, bool enable)
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	int port_id = 0;
-	int index = cpu_dai->id;
+	/* Rx and Tx DAIs should use same clk index */
+	int index = (cpu_dai->id) / 2;
 
 	port_id = msm_get_port_id(rtd->dai_link->id);
 	if (port_id < 0) {
@@ -3931,7 +3931,8 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
-	int index = cpu_dai->id;
+	/* Rx and Tx DAIs should use same clk index */
+	int index = (cpu_dai->id) / 2;
 	unsigned int fmt = SND_SOC_DAIFMT_CBS_CFS;
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
@@ -3955,11 +3956,6 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	 */
 	mutex_lock(&mi2s_intf_conf[index].lock);
 	if (++mi2s_intf_conf[index].ref_cnt == 1) {
-		/* Check if msm needs to provide the clock to the interface */
-		if (!mi2s_intf_conf[index].msm_is_mi2s_master) {
-			mi2s_clk[index].clk_id = mi2s_ebit_clk[index];
-			fmt = SND_SOC_DAIFMT_CBM_CFM;
-		}
 		ret = msm_mi2s_set_sclk(substream, true);
 		if (ret < 0) {
 			dev_err(rtd->card->dev,
@@ -3968,12 +3964,6 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 			goto clean_up;
 		}
 
-		ret = snd_soc_dai_set_fmt(cpu_dai, fmt);
-		if (ret < 0) {
-			pr_err("%s: set fmt cpu dai failed for MI2S (%d), err:%d\n",
-				__func__, index, ret);
-			goto clk_off;
-		}
 		if (pdata->mi2s_gpio_p[index]) {
 			if (atomic_read(&(pdata->mi2s_gpio_ref_count[index]))
 									== 0) {
@@ -3987,6 +3977,17 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 			}
 			atomic_inc(&(pdata->mi2s_gpio_ref_count[index]));
 		}
+	}
+	/* Check if msm needs to provide the clock to the interface */
+	if (!mi2s_intf_conf[index].msm_is_mi2s_master) {
+		mi2s_clk[index].clk_id = mi2s_ebit_clk[index];
+		fmt = SND_SOC_DAIFMT_CBM_CFM;
+	}
+	ret = snd_soc_dai_set_fmt(cpu_dai, fmt);
+	if (ret < 0) {
+		pr_err("%s: set fmt cpu dai failed for MI2S (%d), err:%d\n",
+			__func__, index, ret);
+		goto clk_off;
 	}
 clk_off:
 	if (ret < 0)
@@ -4003,7 +4004,8 @@ static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	int ret = 0;
 	struct snd_soc_pcm_runtime *rtd = substream->private_data;
-	int index = rtd->cpu_dai->id;
+	/* Rx and Tx DAIs should use same clk index */
+	int index = (rtd->cpu_dai->id) / 2;
 	struct snd_soc_card *card = rtd->card;
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
@@ -4259,25 +4261,19 @@ static void msm_add_auxpcm_snd_controls(struct snd_soc_component *component)
 
 static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 {
-	int ret = -EINVAL;
-	struct snd_soc_component *component;
-	struct snd_soc_component *bolero_component = NULL;
-	struct snd_soc_dapm_context *dapm;
-	struct snd_card *card;
-	struct snd_info_entry *entry;
-	struct platform_device *pdev = NULL;
-	int i = 0;
-	char *data = NULL;
+	struct snd_soc_component *component = NULL;
+	struct snd_soc_dapm_context *dapm = NULL;
+	struct snd_card *card = NULL;
+	struct snd_info_entry *entry = NULL;
 	struct msm_asoc_mach_data *pdata =
 				snd_soc_card_get_drvdata(rtd->card);
+	int ret = -EINVAL;
 
 	component = snd_soc_rtdcom_lookup(rtd, "bolero_codec");
 	if (!component) {
 		pr_err("%s: could not find component for bolero_codec\n",
 			__func__);
 		return ret;
-	} else {
-		bolero_component = component;
 	}
 
 	dapm = snd_soc_component_get_dapm(component);
@@ -4332,6 +4328,29 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	bolero_info_create_codec_entry(pdata->codec_root, component);
 	bolero_register_wake_irq(component, false);
 
+err:
+	return ret;
+}
+
+static int msm_aux_codec_init(struct snd_soc_pcm_runtime *rtd)
+{
+	int ret = -EINVAL;
+	struct snd_soc_component *component = NULL;
+	struct snd_soc_component *bolero_component = NULL;
+	struct snd_soc_dapm_context *dapm = NULL;
+	struct snd_card *card = NULL;
+	struct snd_info_entry *entry;
+	char *data = NULL;
+	struct msm_asoc_mach_data *pdata =
+				snd_soc_card_get_drvdata(rtd->card);
+
+	bolero_component = snd_soc_rtdcom_lookup(rtd, "bolero_codec");
+	if (!bolero_component) {
+		pr_err("%s: could not find component for bolero_codec\n",
+			__func__);
+		return -EINVAL;
+	}
+
 	component = snd_soc_rtdcom_lookup(rtd, ROULEUR_DRV_NAME);
 	if (!component)
 		component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
@@ -4354,6 +4373,18 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	snd_soc_dapm_ignore_suspend(dapm, "AMIC3");
 	snd_soc_dapm_ignore_suspend(dapm, "AMIC4");
 	snd_soc_dapm_sync(dapm);
+
+	if (!pdata->codec_root) {
+		entry = msm_snd_info_create_subdir(card->module, "codecs",
+						 card->proc_root);
+		if (!entry) {
+			dev_dbg(component->dev, "%s: Cannot create codecs module entry\n",
+				 __func__);
+			ret = 0;
+			goto err;
+		}
+		pdata->codec_root = entry;
+	}
 
 	if (wcd_datalane_mismatch) {
 		bolero_set_port_map(component,
@@ -5391,7 +5422,7 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 		.ignore_suspend = 1,
 		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(rx_dma_rx0),
-		.init = &msm_int_audrx_init,
+		.init = &msm_aux_codec_init,
 	},
 	{
 		.name = LPASS_BE_RX_CDC_DMA_RX_1,
@@ -5469,12 +5500,12 @@ static struct snd_soc_dai_link msm_va_cdc_dma_be_dai_links[] = {
 		.stream_name = "VA CDC DMA0 Capture",
 		.no_pcm = 1,
 		.dpcm_capture = 1,
-		.init = &msm_int_audrx_init,
 		.id = MSM_BACKEND_DAI_VA_CDC_DMA_TX_0,
 		.be_hw_params_fixup = msm_be_hw_params_fixup,
 		.ignore_suspend = 1,
 		.ops = &msm_cdc_dma_be_ops,
 		SND_SOC_DAILINK_REG(va_dma_tx0),
+		.init = &msm_int_audrx_init,
 	},
 	{
 		.name = LPASS_BE_VA_CDC_DMA_TX_1,

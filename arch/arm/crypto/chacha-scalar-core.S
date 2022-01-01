@@ -41,6 +41,14 @@
 	X14	.req	r12
 	X15	.req	r14
 
+.Lexpand_32byte_k:
+	// "expand 32-byte k"
+	.word	0x61707865, 0x3320646e, 0x79622d32, 0x6b206574
+
+#ifdef __thumb2__
+#  define adrl adr
+#endif
+
 .macro __rev		out, in,  t0, t1, t2
 .if __LINUX_ARM_ARCH__ >= 6
 	rev		\out, \in
@@ -383,53 +391,50 @@
 .endm	// _chacha
 
 /*
- * void chacha_doarm(u8 *dst, const u8 *src, unsigned int bytes,
- *		     const u32 *state, int nrounds);
+ * void chacha20_arm(u8 *out, const u8 *in, size_t len, const u32 key[8],
+ *		     const u32 iv[4]);
  */
-ENTRY(chacha_doarm)
+ENTRY(chacha20_arm)
 	cmp		r2, #0			// len == 0?
 	reteq		lr
-
-	ldr		ip, [sp]
-	cmp		ip, #12
 
 	push		{r0-r2,r4-r11,lr}
 
 	// Push state x0-x15 onto stack.
 	// Also store an extra copy of x10-x11 just before the state.
 
-	add		X12, r3, #48
-	ldm		X12, {X12,X13,X14,X15}
-	push		{X12,X13,X14,X15}
-	sub		sp, sp, #64
+	ldr		r4, [sp, #48]		// iv
+	mov		r0, sp
+	sub		sp, #80
 
-	__ldrd		X8_X10, X9_X11, r3, 40
+	// iv: x12-x15
+	ldm		r4, {X12,X13,X14,X15}
+	stmdb		r0!, {X12,X13,X14,X15}
+
+	// key: x4-x11
+	__ldrd		X8_X10, X9_X11, r3, 24
 	__strd		X8_X10, X9_X11, sp, 8
-	__strd		X8_X10, X9_X11, sp, 56
-	ldm		r3, {X0-X9_X11}
+	stmdb		r0!, {X8_X10, X9_X11}
+	ldm		r3, {X4-X9_X11}
+	stmdb		r0!, {X4-X9_X11}
+
+	// constants: x0-x3
+	adrl		X3, .Lexpand_32byte_k
+	ldm		X3, {X0-X3}
 	__strd		X0, X1, sp, 16
 	__strd		X2, X3, sp, 24
-	__strd		X4, X5, sp, 32
-	__strd		X6, X7, sp, 40
-	__strd		X8_X10, X9_X11, sp, 48
 
-	beq		1f
 	_chacha		20
 
-0:	add		sp, #76
+	add		sp, #76
 	pop		{r4-r11, pc}
-
-1:	_chacha		12
-	b		0b
-ENDPROC(chacha_doarm)
+ENDPROC(chacha20_arm)
 
 /*
- * void hchacha_block_arm(const u32 state[16], u32 out[8], int nrounds);
+ * void hchacha20_arm(const u32 state[16], u32 out[8]);
  */
-ENTRY(hchacha_block_arm)
+ENTRY(hchacha20_arm)
 	push		{r1,r4-r11,lr}
-
-	cmp		r2, #12			// ChaCha12 ?
 
 	mov		r14, r0
 	ldmia		r14!, {r0-r11}		// load x0-x11
@@ -437,11 +442,10 @@ ENTRY(hchacha_block_arm)
 	ldm		r14, {r10-r12,r14}	// load x12-x15
 	sub		sp, #8
 
-	beq		1f
 	_chacha_permute	20
 
 	// Skip over (unused0-unused1, x10-x11)
-0:	add		sp, #16
+	add		sp, #16
 
 	// Fix up rotations of x12-x15
 	ror		X12, X12, #drot
@@ -454,7 +458,4 @@ ENTRY(hchacha_block_arm)
 	stm		r4, {X0,X1,X2,X3,X12,X13,X14,X15}
 
 	pop		{r4-r11,pc}
-
-1:	_chacha_permute	12
-	b		0b
-ENDPROC(hchacha_block_arm)
+ENDPROC(hchacha20_arm)

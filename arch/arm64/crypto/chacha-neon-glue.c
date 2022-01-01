@@ -211,13 +211,12 @@ static int __init chacha_simd_mod_init(void)
 
 	static_branch_enable(&have_neon);
 
-	return IS_REACHABLE(CONFIG_CRYPTO_BLKCIPHER) ?
-		crypto_register_skciphers(algs, ARRAY_SIZE(algs)) : 0;
+	return crypto_register_skciphers(algs, ARRAY_SIZE(algs));
 }
 
 static void __exit chacha_simd_mod_fini(void)
 {
-	if (IS_REACHABLE(CONFIG_CRYPTO_BLKCIPHER) && cpu_have_named_feature(ASIMD))
+	if (cpu_have_named_feature(ASIMD))
 		crypto_unregister_skciphers(algs, ARRAY_SIZE(algs));
 }
 

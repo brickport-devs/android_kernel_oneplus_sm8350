@@ -108,15 +108,14 @@ static int __init mod_init(void)
 {
 	if (elf_hwcap & HWCAP_NEON) {
 		static_branch_enable(&have_neon);
-		return IS_REACHABLE(CONFIG_CRYPTO_KPP) ?
-			crypto_register_kpp(&curve25519_alg) : 0;
+		return crypto_register_kpp(&curve25519_alg);
 	}
 	return 0;
 }
 
 static void __exit mod_exit(void)
 {
-	if (IS_REACHABLE(CONFIG_CRYPTO_KPP) && elf_hwcap & HWCAP_NEON)
+	if (elf_hwcap & HWCAP_NEON)
 		crypto_unregister_kpp(&curve25519_alg);
 }
 

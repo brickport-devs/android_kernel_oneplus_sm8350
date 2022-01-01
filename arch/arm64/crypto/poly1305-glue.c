@@ -220,13 +220,12 @@ static int __init neon_poly1305_mod_init(void)
 
 	static_branch_enable(&have_neon);
 
-	return IS_REACHABLE(CONFIG_CRYPTO_HASH) ?
-		crypto_register_shash(&neon_poly1305_alg) : 0;
+	return crypto_register_shash(&neon_poly1305_alg);
 }
 
 static void __exit neon_poly1305_mod_exit(void)
 {
-	if (IS_REACHABLE(CONFIG_CRYPTO_HASH) && cpu_have_named_feature(ASIMD))
+	if (cpu_have_named_feature(ASIMD))
 		crypto_unregister_shash(&neon_poly1305_alg);
 }
 

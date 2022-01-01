@@ -224,13 +224,12 @@ static int __init poly1305_simd_mod_init(void)
 	    cpu_has_xfeatures(XFEATURE_MASK_SSE | XFEATURE_MASK_YMM, NULL))
 		static_branch_enable(&poly1305_use_avx2);
 
-	return IS_REACHABLE(CONFIG_CRYPTO_HASH) ? crypto_register_shash(&alg) : 0;
+	return crypto_register_shash(&alg);
 }
 
 static void __exit poly1305_simd_mod_exit(void)
 {
-	if (IS_REACHABLE(CONFIG_CRYPTO_HASH))
-		crypto_unregister_shash(&alg);
+	crypto_unregister_shash(&alg);
 }
 
 module_init(poly1305_simd_mod_init);

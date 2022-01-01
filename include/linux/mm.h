@@ -1541,22 +1541,13 @@ int generic_access_phys(struct vm_area_struct *vma, unsigned long addr,
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 static inline void vm_write_begin(struct vm_area_struct *vma)
 {
-	write_seqcount_begin(&vma->vm_sequence);
-}
-static inline void vm_write_begin_nested(struct vm_area_struct *vma,
-					 int subclass)
-{
-	write_seqcount_begin_nested(&vma->vm_sequence, subclass);
-}
-static inline void vm_write_end(struct vm_area_struct *vma)
-{
-	write_seqcount_end(&vma->vm_sequence);
-}
-static inline void vm_raw_write_begin(struct vm_area_struct *vma)
-{
+	/*
+	 * The reads never spins and preemption
+	 * disablement is not required.
+	 */
 	raw_write_seqcount_begin(&vma->vm_sequence);
 }
-static inline void vm_raw_write_end(struct vm_area_struct *vma)
+static inline void vm_write_end(struct vm_area_struct *vma)
 {
 	raw_write_seqcount_end(&vma->vm_sequence);
 }
@@ -1564,17 +1555,7 @@ static inline void vm_raw_write_end(struct vm_area_struct *vma)
 static inline void vm_write_begin(struct vm_area_struct *vma)
 {
 }
-static inline void vm_write_begin_nested(struct vm_area_struct *vma,
-					 int subclass)
-{
-}
 static inline void vm_write_end(struct vm_area_struct *vma)
-{
-}
-static inline void vm_raw_write_begin(struct vm_area_struct *vma)
-{
-}
-static inline void vm_raw_write_end(struct vm_area_struct *vma)
 {
 }
 #endif /* CONFIG_SPECULATIVE_PAGE_FAULT */
@@ -3078,6 +3059,16 @@ static inline int pages_identical(struct page *page1, struct page *page2)
 	return !memcmp_pages(page1, page2);
 }
 
+extern int want_old_faultaround_pte;
+
+#ifndef CONFIG_MULTIPLE_KSWAPD
+static inline void update_kswapd_threads_node(int nid) {}
+static inline int multi_kswapd_run(int nid) { return 0; }
+static inline void multi_kswapd_stop(int nid) {}
+static inline void multi_kswapd_cpu_online(pg_data_t *pgdat,
+					const struct cpumask *mask) {}
+#endif /* CONFIG_MULTIPLE_KSWAPD */
+
 /**
  * seal_check_future_write - Check for F_SEAL_FUTURE_WRITE flag and handle it
  * @seals: the seals to check
@@ -3110,14 +3101,5 @@ static inline int seal_check_future_write(int seals, struct vm_area_struct *vma)
 	return 0;
 }
 
-extern int want_old_faultaround_pte;
-
-#ifndef CONFIG_MULTIPLE_KSWAPD
-static inline void update_kswapd_threads_node(int nid) {}
-static inline int multi_kswapd_run(int nid) { return 0; }
-static inline void multi_kswapd_stop(int nid) {}
-static inline void multi_kswapd_cpu_online(pg_data_t *pgdat,
-					const struct cpumask *mask) {}
-#endif /* CONFIG_MULTIPLE_KSWAPD */
 #endif /* __KERNEL__ */
 #endif /* _LINUX_MM_H */

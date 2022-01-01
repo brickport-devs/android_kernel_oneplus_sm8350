@@ -966,6 +966,7 @@ static int dwc3_gadget_ep_disable(struct usb_ep *ep)
 	struct dwc3			*dwc;
 	unsigned long			flags;
 	int				ret;
+	bool				call_rpm_put = false;
 
 	if (!ep) {
 		pr_debug("dwc3: invalid parameters\n");
@@ -980,13 +981,18 @@ static int dwc3_gadget_ep_disable(struct usb_ep *ep)
 					dep->name))
 		return 0;
 
-	pm_runtime_get_sync(dwc->sysdev);
+	if (atomic_read(&dwc->in_lpm)) {
+		pm_runtime_get_sync(dwc->sysdev);
+		call_rpm_put = true;
+	}
 	spin_lock_irqsave(&dwc->lock, flags);
 	ret = __dwc3_gadget_ep_disable(dep);
 	dbg_event(dep->number, "DISABLE", ret);
 	spin_unlock_irqrestore(&dwc->lock, flags);
-	pm_runtime_mark_last_busy(dwc->sysdev);
-	pm_runtime_put_autosuspend(dwc->sysdev);
+	if (call_rpm_put) {
+		pm_runtime_mark_last_busy(dwc->sysdev);
+		pm_runtime_put_autosuspend(dwc->sysdev);
+	}
 
 	return ret;
 }
@@ -2070,6 +2076,7 @@ static int dwc3_gadget_remote_wakeup(struct dwc3 *dwc)
 	case DWC3_LINK_STATE_RESET:
 	case DWC3_LINK_STATE_RX_DET:	/* in HS, means Early Suspend */
 	case DWC3_LINK_STATE_U3:	/* in HS, means SUSPEND */
+	case DWC3_LINK_STATE_U2:	/* in HS, means Sleep (L1) */
 	case DWC3_LINK_STATE_RESUME:
 		break;
 	case DWC3_LINK_STATE_U1:
@@ -3137,7 +3144,9 @@ static void dwc3_gadget_free_endpoints(struct dwc3 *dwc)
 			list_del(&dep->endpoint.ep_list);
 		}
 
-		debugfs_remove_recursive(debugfs_lookup(dep->name, dwc->root));
+		debugfs_remove_recursive(debugfs_lookup(dep->name,
+				debugfs_lookup(dev_name(dep->dwc->dev),
+					       usb_debug_root)));
 		kfree(dep);
 	}
 }

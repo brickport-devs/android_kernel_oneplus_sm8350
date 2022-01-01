@@ -138,7 +138,7 @@ static netdev_tx_t wg_xmit(struct sk_buff *skb, struct net_device *dev)
 		else if (skb->protocol == htons(ETH_P_IPV6))
 			net_dbg_ratelimited("%s: No peer has allowed IPs matching %pI6\n",
 					    dev->name, &ipv6_hdr(skb)->daddr);
-		goto err_icmp;
+		goto err;
 	}
 
 	family = READ_ONCE(peer->endpoint.addr.sa_family);
@@ -201,13 +201,12 @@ static netdev_tx_t wg_xmit(struct sk_buff *skb, struct net_device *dev)
 
 err_peer:
 	wg_peer_put(peer);
-err_icmp:
+err:
+	++dev->stats.tx_errors;
 	if (skb->protocol == htons(ETH_P_IP))
 		icmp_ndo_send(skb, ICMP_DEST_UNREACH, ICMP_HOST_UNREACH, 0);
 	else if (skb->protocol == htons(ETH_P_IPV6))
 		icmpv6_ndo_send(skb, ICMPV6_DEST_UNREACH, ICMPV6_ADDR_UNREACH, 0);
-err:
-	++dev->stats.tx_errors;
 	kfree_skb(skb);
 	return ret;
 }

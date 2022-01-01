@@ -21,7 +21,7 @@ static int chacha_stream_xor(struct skcipher_request *req,
 
 	err = skcipher_walk_virt(&walk, req, false);
 
-	chacha_init_generic(state, ctx->key, iv);
+	crypto_chacha_init(state, ctx, iv);
 
 	while (walk.nbytes > 0) {
 		unsigned int nbytes = walk.nbytes;
@@ -37,27 +37,36 @@ static int chacha_stream_xor(struct skcipher_request *req,
 	return err;
 }
 
-static int crypto_chacha20_setkey(struct crypto_skcipher *tfm, const u8 *key,
-				  unsigned int keysize)
+void crypto_chacha_init(u32 *state, const struct chacha_ctx *ctx, const u8 *iv)
+{
+	chacha_init_generic(state, ctx->key, iv);
+}
+EXPORT_SYMBOL_GPL(crypto_chacha_init);
+
+int crypto_chacha20_setkey(struct crypto_skcipher *tfm, const u8 *key,
+			   unsigned int keysize)
 {
 	return chacha_setkey(tfm, key, keysize, 20);
 }
+EXPORT_SYMBOL_GPL(crypto_chacha20_setkey);
 
-static int crypto_chacha12_setkey(struct crypto_skcipher *tfm, const u8 *key,
-				 unsigned int keysize)
+int crypto_chacha12_setkey(struct crypto_skcipher *tfm, const u8 *key,
+			   unsigned int keysize)
 {
 	return chacha_setkey(tfm, key, keysize, 12);
 }
+EXPORT_SYMBOL_GPL(crypto_chacha12_setkey);
 
-static int crypto_chacha_crypt(struct skcipher_request *req)
+int crypto_chacha_crypt(struct skcipher_request *req)
 {
 	struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
 	struct chacha_ctx *ctx = crypto_skcipher_ctx(tfm);
 
 	return chacha_stream_xor(req, ctx, req->iv);
 }
+EXPORT_SYMBOL_GPL(crypto_chacha_crypt);
 
-static int crypto_xchacha_crypt(struct skcipher_request *req)
+int crypto_xchacha_crypt(struct skcipher_request *req)
 {
 	struct crypto_skcipher *tfm = crypto_skcipher_reqtfm(req);
 	struct chacha_ctx *ctx = crypto_skcipher_ctx(tfm);
@@ -66,7 +75,7 @@ static int crypto_xchacha_crypt(struct skcipher_request *req)
 	u8 real_iv[16];
 
 	/* Compute the subkey given the original key and first 128 nonce bits */
-	chacha_init_generic(state, ctx->key, req->iv);
+	crypto_chacha_init(state, ctx, req->iv);
 	hchacha_block_generic(state, subctx.key, ctx->nrounds);
 	subctx.nrounds = ctx->nrounds;
 
@@ -77,6 +86,7 @@ static int crypto_xchacha_crypt(struct skcipher_request *req)
 	/* Generate the stream and XOR it with the data */
 	return chacha_stream_xor(req, &subctx, real_iv);
 }
+EXPORT_SYMBOL_GPL(crypto_xchacha_crypt);
 
 static struct skcipher_alg algs[] = {
 	{

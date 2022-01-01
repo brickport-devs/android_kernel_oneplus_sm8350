@@ -533,6 +533,30 @@ struct dp_tx_desc_s {
 	struct hal_tx_desc_comp_s comp;
 };
 
+#ifdef QCA_AC_BASED_FLOW_CONTROL
+/**
+ * enum flow_pool_status - flow pool status
+ * @FLOW_POOL_ACTIVE_UNPAUSED : pool is active (can take/put descriptors)
+ *				and network queues are unpaused
+ * @FLOW_POOL_ACTIVE_PAUSED: pool is active (can take/put descriptors)
+ *			   and network queues are paused
+ * @FLOW_POOL_INVALID: pool is invalid (put descriptor)
+ * @FLOW_POOL_INACTIVE: pool is inactive (pool is free)
+ * @FLOW_POOL_ACTIVE_UNPAUSED_REATTACH: pool is reattached but network
+ *					queues are not paused
+ */
+enum flow_pool_status {
+	FLOW_POOL_ACTIVE_UNPAUSED = 0,
+	FLOW_POOL_ACTIVE_PAUSED = 1,
+	FLOW_POOL_BE_BK_PAUSED = 2,
+	FLOW_POOL_VI_PAUSED = 3,
+	FLOW_POOL_VO_PAUSED = 4,
+	FLOW_POOL_INVALID = 5,
+	FLOW_POOL_INACTIVE = 6,
+	FLOW_POOL_ACTIVE_UNPAUSED_REATTACH = 7,
+};
+
+#else
 /**
  * enum flow_pool_status - flow pool status
  * @FLOW_POOL_ACTIVE_UNPAUSED : pool is active (can take/put descriptors)
@@ -551,6 +575,8 @@ enum flow_pool_status {
 	FLOW_POOL_INVALID = 5,
 	FLOW_POOL_INACTIVE = 6,
 };
+
+#endif
 
 /**
  * struct dp_tx_tso_seg_pool_s
@@ -911,6 +937,8 @@ struct dp_soc_stats {
 		uint32_t tx_comp_loop_pkt_limit_hit;
 		/* Head pointer Out of sync at the end of dp_tx_comp_handler */
 		uint32_t hp_oos2;
+		/* tx desc freed as part of vdev detach */
+		uint32_t tx_comp_exception;
 	} tx;
 
 	/* SOC level RX stats */

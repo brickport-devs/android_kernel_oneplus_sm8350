@@ -182,8 +182,6 @@ static int set_cpu_min_freq(const char *buf, const struct kernel_param *kp)
 	struct freq_qos_request *req;
 	int ret = 0;
 
-	return 0;
-
 	if (!ready_for_freq_updates) {
 		ret = freq_qos_request_init();
 		if (ret) {
@@ -274,8 +272,6 @@ static int set_cpu_max_freq(const char *buf, const struct kernel_param *kp)
 	struct cpufreq_policy policy;
 	struct freq_qos_request *req;
 	int ret = 0;
-
-	return 0;
 
 	if (!ready_for_freq_updates) {
 		ret = freq_qos_request_init();

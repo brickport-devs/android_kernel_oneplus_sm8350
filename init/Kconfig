@@ -1197,7 +1197,13 @@ config CPUSET_BG
 	help
 	  The CPU mask to use for the background cpuset.
 
-config CPUSET_CAMERA
+config CPUSET_CAMERA_APP
+	string "Value for 'camera-app' cpuset"
+	default "0-6"
+	help
+	  The CPU mask to use for the camera-app cpuset.
+
+config CPUSET_CAMERA_DAEMON
 	string "Value for 'camera-daemon' cpuset"
 	default "4-7"
 	help

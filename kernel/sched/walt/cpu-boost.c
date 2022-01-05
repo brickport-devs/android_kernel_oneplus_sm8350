@@ -78,8 +78,6 @@ static ssize_t store_input_boost_freq(struct kobject *kobj,
 	const char *cp = buf;
 	bool enabled = false;
 
-	return 0;
-
 	while ((cp = strpbrk(cp + 1, " :")))
 		ntokens++;
 
@@ -125,8 +123,6 @@ static ssize_t show_input_boost_freq(struct kobject *kobj,
 {
 	int cnt = 0, cpu;
 	struct cpu_sync *s;
-
-	return 0;
 
 	for_each_possible_cpu(cpu) {
 		s = &per_cpu(sync_info, cpu);
@@ -268,8 +264,6 @@ static int cpuboost_input_connect(struct input_handler *handler,
 	struct input_handle *handle;
 	int error;
 
-	return 0;
-
 	handle = kzalloc(sizeof(struct input_handle), GFP_KERNEL);
 	if (!handle)
 		return -ENOMEM;
@@ -342,8 +336,6 @@ int cpu_boost_init(void)
 	struct cpu_sync *s;
 	struct cpufreq_policy *policy;
 	struct freq_qos_request *req;
-
-	return 0;
 
 	cpu_boost_wq = alloc_workqueue("cpuboost_wq", WQ_HIGHPRI, 0);
 	if (!cpu_boost_wq)

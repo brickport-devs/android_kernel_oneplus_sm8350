@@ -18,6 +18,10 @@
 #include <linux/rwsem.h>
 #include <linux/zsmalloc.h>
 #include <linux/crypto.h>
+#ifdef CONFIG_ZRAM_DEDUP
+#include <linux/cache.h>
+#include <linux/zpool.h>
+#endif
 
 #include "zcomp.h"
 
@@ -50,7 +54,9 @@ enum zram_pageflags {
 	ZRAM_UNDER_WB,	/* page is under writeback */
 	ZRAM_HUGE,	/* Incompressible page */
 	ZRAM_IDLE,	/* not accessed page since last idle marking */
-
+#ifdef CONFIG_ZRAM_DEDUP
+	ZRAM_INDIRECT_HANDLE,
+#endif
 	__NR_ZRAM_PAGEFLAGS,
 };
 
@@ -89,9 +95,33 @@ struct zram_stats {
 #endif
 };
 
+#ifdef CONFIG_ZRAM_DEDUP
+struct zram_indirect_handle {
+	struct hlist_bl_node	node;
+	unsigned long		handle;
+	atomic_t		refs;
+	u32			hash;
+	size_t			len;
+};
+
+struct zram_hashtable_head {
+	struct hlist_bl_head	head;
+};
+
+struct zram_dedup {
+	struct zram_hashtable_head	*buckets;
+	int				nbuckets;
+	unsigned long			nr_pages;
+	atomic64_t			dedups;
+};
+#endif
+
 struct zram {
 	struct zram_table_entry *table;
 	struct zs_pool *mem_pool;
+#ifdef CONFIG_ZRAM_DEDUP
+	struct zram_dedup *dedup;
+#endif
 	struct zcomp *comp;
 	struct gendisk *disk;
 	/* Prevent concurrent execution of device init */
@@ -113,8 +143,10 @@ struct zram {
 	 */
 	bool claim; /* Protected by bdev->bd_mutex */
 	struct file *backing_dev;
-#ifdef CONFIG_ZRAM_WRITEBACK
+#if (defined CONFIG_ZRAM_WRITEBACK) || (defined CONFIG_ZRAM_DEDUP)
 	spinlock_t wb_limit_lock;
+#endif
+#ifdef CONFIG_ZRAM_WRITEBACK
 	bool wb_limit_enable;
 	u64 bd_wb_limit;
 	struct block_device *bdev;
@@ -124,6 +156,9 @@ struct zram {
 #endif
 #ifdef CONFIG_ZRAM_MEMORY_TRACKING
 	struct dentry *debugfs_dir;
+#endif
+#ifdef CONFIG_ZRAM_DEDUP
+	bool dedup_enable;
 #endif
 };
 #endif

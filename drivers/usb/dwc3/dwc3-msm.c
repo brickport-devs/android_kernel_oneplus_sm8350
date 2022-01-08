@@ -5712,7 +5712,6 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 {
 	struct dwc3_msm *mdwc = container_of(w, struct dwc3_msm, sm_work.work);
 	struct dwc3 *dwc = NULL;
-	bool is_cdp;
 	bool work = false;
 	int ret = 0;
 	unsigned long delay = 0;
@@ -5786,16 +5785,8 @@ static void dwc3_otg_sm_work(struct work_struct *w)
 				atomic_read(&mdwc->dev->power.usage_count));
 			dwc3_otg_start_peripheral(mdwc, 1);
 			mdwc->drd_state = DRD_STATE_PERIPHERAL;
-			/*
-			 * In case of ADSP based charger detection driving a pulse on
-			 * DP to ensure proper CDP detection will be taken care by
-			 * ADSP.
-			 */
-			is_cdp = ((mdwc->apsd_source == IIO) &&
-				(get_chg_type(mdwc) == POWER_SUPPLY_TYPE_USB_CDP)) ||
-				((mdwc->apsd_source == PSY) &&
-				(get_chg_type(mdwc) == POWER_SUPPLY_USB_TYPE_CDP));
-			if (!dwc->softconnect && is_cdp) {
+			if (!dwc->softconnect &&
+			      get_chg_type(mdwc) == POWER_SUPPLY_TYPE_USB_CDP) {
 				dbg_event(0xFF, "cdp pullup dp", 0);
 
 				reg = dwc3_msm_read_reg(mdwc->base, DWC3_DCTL);

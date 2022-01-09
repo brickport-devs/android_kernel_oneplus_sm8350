@@ -13,6 +13,10 @@
 #include "kgsl_sharedmem.h"
 #include "kgsl_trace.h"
 
+#ifdef CONFIG_HUGEPAGE_POOL
+#include <linux/hugepage_pool.h>
+#endif
+
 /**
  * struct kgsl_page_pool - Structure to hold information for the pool
  * @pool_order: Page order describing the size of the page
@@ -29,7 +33,11 @@ struct kgsl_page_pool {
 	struct llist_head page_list;
 };
 
+#ifdef CONFIG_HUGEPAGE_POOL
+static struct kgsl_page_pool kgsl_pools[7];
+#else
 static struct kgsl_page_pool kgsl_pools[6];
+#endif
 static int kgsl_num_pools;
 static int kgsl_pool_max_pages;
 
@@ -54,6 +62,11 @@ _kgsl_get_pool_from_order(int order)
 {
 	int index = kgsl_get_pool_index(order);
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	if (order == HUGEPAGE_ORDER &&
+	    !is_hugepage_allowed(current, order, false, HPAGE_GPU))
+		return NULL;
+#endif
 	return index >= 0 ? &kgsl_pools[index] : NULL;
 }
 
@@ -331,7 +344,11 @@ static int kgsl_get_page_size(size_t size, unsigned int align)
 {
 	size_t pool;
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	for (pool = SZ_2M; pool > PAGE_SIZE; pool >>= 2)
+#else
 	for (pool = SZ_1M; pool > PAGE_SIZE; pool >>= 1)
+#endif
 		if ((align >= ilog2(pool)) && (size >= pool) &&
 			kgsl_pool_available(pool))
 			return pool;
@@ -410,7 +427,15 @@ static int kgsl_pool_alloc_page(int *page_size, struct page **pages,
 	if (page == NULL) {
 		gfp_t gfp_mask = kgsl_gfp_mask(order);
 
+#ifdef CONFIG_HUGEPAGE_POOL
+		if (order == HUGEPAGE_ORDER)
+			page = alloc_zeroed_hugepage(gfp_mask, order, false,
+						     HPAGE_GPU);
+		else
+			page = alloc_pages(gfp_mask, order);
+#else
 		page = alloc_pages(gfp_mask, order);
+#endif
 
 		if (!page) {
 			if (pool_idx > 0) {
@@ -459,8 +484,13 @@ int kgsl_pool_alloc_pages(u64 size, struct page ***pages, struct device *dev)
 	if (!local)
 		return -ENOMEM;
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	/* Start with 2MB alignment to get the biggest page we can */
+	align = ilog2(SZ_2M);
+#else
 	/* Start with 1MB alignment to get the biggest page we can */
 	align = ilog2(SZ_1M);
+#endif
 
 	page_size = kgsl_get_page_size(len, align);
 
@@ -586,7 +616,11 @@ static int kgsl_of_parse_mempool(struct kgsl_page_pool *pool,
 
 	order = ilog2(size >> PAGE_SHIFT);
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	if (order > 9) {
+#else
 	if (order > 8) {
+#endif
 		pr_err("kgsl: %pOF: pool order %d is too big\n", node, order);
 		return -EINVAL;
 	}

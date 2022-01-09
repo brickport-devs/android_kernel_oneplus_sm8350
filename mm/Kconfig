@@ -870,6 +870,36 @@ config PROCESS_RECLAIM
 
 	 Any other value is ignored.
 
+config KZEROD
+	bool "Support kzerod"
+	default n
+	depends on !NEED_MULTIPLE_NODES
+	help
+	  Support kzerod kernel thread which does prezeroing of free pages.
+
+config HUGEPAGE_POOL
+	bool "hugepage pool management"
+	default n
+	depends on KZEROD && !HIGHMEM && !ZONE_DEVICE
+	depends on TRANSPARENT_HUGEPAGE
+	help
+	  Enable this to provide 2MB hugepage to THP anon, ION, and GPU memory
+	  allocation requests efficiently.
+
+config HUGEPAGE_POOL_DEBUG
+	bool "hugepage pool debug"
+	default n
+	depends on HUGEPAGE_POOL
+	help
+	  Show hugepage pool debug logs in kernel log.
+
+config HUGEPAGE_POOL_ALLOW_ALL
+	bool "allow 2MB page for all to debug hugepage pool"
+	default n
+	depends on HUGEPAGE_POOL
+	help
+	  allow 2MB page for all to debug hugepage pool
+
 config MULTIPLE_KSWAPD
 	bool "Spawn multiple kswapd threads"
 	depends on QGKI

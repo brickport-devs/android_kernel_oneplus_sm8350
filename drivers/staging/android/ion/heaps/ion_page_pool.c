@@ -10,13 +10,26 @@
 #include <linux/swap.h>
 #include <linux/sched/signal.h>
 
+#ifdef CONFIG_HUGEPAGE_POOL
+#include <linux/hugepage_pool.h>
+#endif
+
 #include "ion_page_pool.h"
 
 static inline struct page *ion_page_pool_alloc_pages(struct ion_page_pool *pool)
 {
 	if (fatal_signal_pending(current))
 		return NULL;
+#ifdef CONFIG_HUGEPAGE_POOL
+	/* we assume that this path is only being used by system heap */
+	if (pool->order == HUGEPAGE_ORDER)
+		return alloc_zeroed_hugepage(pool->gfp_mask, pool->order, true,
+					     HPAGE_ION);
+	else
+		return alloc_pages(pool->gfp_mask, pool->order);
+#else
 	return alloc_pages(pool->gfp_mask, pool->order);
+#endif
 }
 
 static void ion_page_pool_free_pages(struct ion_page_pool *pool,

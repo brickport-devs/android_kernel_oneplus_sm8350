@@ -1430,15 +1430,35 @@ void __meminit reserve_bootmem_region(phys_addr_t start, phys_addr_t end)
 	}
 }
 
+#ifdef CONFIG_HUGEPAGE_POOL
+static void  __free_pages_ok(struct page *page, unsigned int order)
+{
+	___free_pages_ok(page, order, false);
+}
+
+void ___free_pages_ok(struct page *page, unsigned int order,
+		      bool skip_hugepage_pool)
+#else
 static void __free_pages_ok(struct page *page, unsigned int order)
+#endif
 {
 	unsigned long flags;
 	int migratetype;
 	unsigned long pfn = page_to_pfn(page);
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	if (!skip_hugepage_pool && !free_pages_prepare(page, order, true))
+		return;
+#else
 	if (!free_pages_prepare(page, order, true))
 		return;
+#endif
 
+#ifdef CONFIG_HUGEPAGE_POOL
+	if (!skip_hugepage_pool && order == HUGEPAGE_ORDER &&
+	    insert_hugepage_pool(page, order))
+		return;
+#endif
 	migratetype = get_pfnblock_migratetype(page, pfn);
 	local_irq_save(flags);
 	__count_vm_events(PGFREE, 1 << order);
@@ -2166,8 +2186,13 @@ inline void post_alloc_hook(struct page *page, unsigned int order,
 	set_page_owner(page, order, gfp_flags);
 }
 
+#ifdef CONFIG_HUGEPAGE_POOL
+void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
+							unsigned int alloc_flags)
+#else
 static void prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
 							unsigned int alloc_flags)
+#endif
 {
 	post_alloc_hook(page, order, gfp_flags);
 

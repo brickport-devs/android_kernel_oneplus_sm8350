@@ -2415,14 +2415,22 @@ enum compact_result try_to_compact_pages(gfp_t gfp_mask, unsigned int order,
 
 
 /* Compact all zones within a node */
+#ifdef CONFIG_HUGEPAGE_POOL
+static void __compact_node(int nid, bool sync)
+#else
 static void compact_node(int nid)
+#endif
 {
 	pg_data_t *pgdat = NODE_DATA(nid);
 	int zoneid;
 	struct zone *zone;
 	struct compact_control cc = {
 		.order = -1,
+#ifdef CONFIG_HUGEPAGE_POOL
+		.mode = sync ? MIGRATE_SYNC : MIGRATE_ASYNC,
+#else
 		.mode = MIGRATE_SYNC,
+#endif
 		.ignore_skip_hint = true,
 		.whole_zone = true,
 		.gfp_mask = GFP_KERNEL,
@@ -2443,6 +2451,20 @@ static void compact_node(int nid)
 		VM_BUG_ON(!list_empty(&cc.migratepages));
 	}
 }
+
+#ifdef CONFIG_HUGEPAGE_POOL
+void compact_node_async(void)
+{
+	/* hugepage pool and kzerod assumes there is only one node */
+	__compact_node(0, false);
+}
+
+/* Compact all zones within a node */
+static void compact_node(int nid)
+{
+	__compact_node(nid, true);
+}
+#endif
 
 /* Compact all nodes in the system */
 static void compact_nodes(void)

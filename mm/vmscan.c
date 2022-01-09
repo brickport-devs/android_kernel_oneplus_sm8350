@@ -1182,6 +1182,11 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 		if (!sc->may_unmap && page_mapped(page))
 			goto keep_locked;
 
+#ifdef CONFIG_HUGEPAGE_POOL
+		if (PageTransHuge(page))
+			goto keep_locked;
+#endif
+
 		may_enter_fs = (sc->gfp_mask & __GFP_FS) ||
 			(PageSwapCache(page) && (sc->gfp_mask & __GFP_IO));
 
@@ -1329,6 +1334,9 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 				if (!add_to_swap(page)) {
 					if (!PageTransHuge(page))
 						goto activate_locked_split;
+#ifdef CONFIG_HUGEPAGE_POOL_DEBUG
+					BUG();
+#endif
 					/* Fallback to swap normal pages */
 					if (split_huge_page_to_list(page,
 								    page_list))
@@ -1773,7 +1781,12 @@ static unsigned long isolate_lru_pages(unsigned long nr_to_scan,
 		nr_pages = compound_nr(page);
 		total_scan += nr_pages;
 
+#ifdef CONFIG_HUGEPAGE_POOL
+		if (page_zonenum(page) > sc->reclaim_idx
+		    || PageTransHuge(page)) {
+#else
 		if (page_zonenum(page) > sc->reclaim_idx) {
+#endif
 			list_move(&page->lru, &pages_skipped);
 			nr_skipped[page_zonenum(page)] += nr_pages;
 			continue;

@@ -3052,6 +3052,11 @@ void __init setup_nr_node_ids(void);
 static inline void setup_nr_node_ids(void) {}
 #endif
 
+#ifdef CONFIG_KZEROD
+extern atomic_t kzerod_zero_page_alloc_total;
+extern atomic_t kzerod_zero_page_alloc_prezero;
+#endif
+
 extern int memcmp_pages(struct page *page1, struct page *page2);
 
 static inline int pages_identical(struct page *page1, struct page *page2)

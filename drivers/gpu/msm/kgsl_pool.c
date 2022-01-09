@@ -342,7 +342,7 @@ static int kgsl_get_page_size(size_t size, unsigned int align)
 	size_t pool;
 
 #ifdef CONFIG_HUGEPAGE_POOL
-	for (pool = SZ_2M; pool > PAGE_SIZE; pool >>= 2)
+	for (pool = SZ_2M; pool > PAGE_SIZE; pool >>= 1)
 #else
 	for (pool = SZ_1M; pool > PAGE_SIZE; pool >>= 1)
 #endif

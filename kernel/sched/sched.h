@@ -2655,10 +2655,8 @@ static inline void cpufreq_update_util(struct rq *rq, unsigned int flags)
 #ifdef CONFIG_SCHED_WALT
 	if (!(flags & SCHED_CPUFREQ_WALT))
 		return;
-	clock = sched_ktime_clock();
-#else
-	clock = rq_clock(rq);
 #endif
+	clock = rq_clock(rq);
 
 	data = rcu_dereference_sched(*per_cpu_ptr(&cpufreq_update_util_data,
 					cpu_of(rq)));

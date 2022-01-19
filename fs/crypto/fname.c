@@ -381,6 +381,7 @@ int fscrypt_fname_disk_to_usr(const struct inode *inode,
 
 	nokey_name.dirhash[0] = hash;
 	nokey_name.dirhash[1] = minor_hash;
+
 	if (iname->len <= sizeof(nokey_name.bytes)) {
 		memcpy(nokey_name.bytes, iname->name, iname->len);
 		size = offsetof(struct fscrypt_nokey_name, bytes[iname->len]);

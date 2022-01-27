@@ -475,7 +475,7 @@ static const struct soc_enum tdm_config_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(tdm_header_type), tdm_header_type),
 };
 
-static u16 afe_port_logging_port_id;
+static u16 afe_port_logging_port_id = 0x9000;
 
 static bool afe_port_logging_item[IDX_TDM_MAX];
 

@@ -243,7 +243,7 @@ EXT4_ATTR_FEATURE(meta_bg_resize);
 EXT4_ATTR_FEATURE(encryption);
 EXT4_ATTR_FEATURE(test_dummy_encryption_v2);
 #endif
-#ifdef CONFIG_UNICODE
+#if IS_ENABLED(CONFIG_UNICODE)
 EXT4_ATTR_FEATURE(casefold);
 #endif
 #ifdef CONFIG_FS_VERITY
@@ -259,7 +259,7 @@ static struct attribute *ext4_feat_attrs[] = {
 	ATTR_LIST(encryption),
 	ATTR_LIST(test_dummy_encryption_v2),
 #endif
-#ifdef CONFIG_UNICODE
+#if IS_ENABLED(CONFIG_UNICODE)
 	ATTR_LIST(casefold),
 #endif
 #ifdef CONFIG_FS_VERITY

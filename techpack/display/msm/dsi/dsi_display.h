@@ -803,10 +803,6 @@ extern struct drm_panel *lcd_active_panel;
 extern int drm_panel_notifier_call_chain(struct drm_panel *panel,
 	unsigned long val, void *v);
 
-#ifdef CONFIG_F2FS_OF2FS
-extern int f2fs_panel_notifier_call_chain(unsigned long val, void *v);
-#endif
-
 int dsi_display_cmd_engine_enable(struct dsi_display *display);
 int dsi_display_cmd_engine_disable(struct dsi_display *display);
 

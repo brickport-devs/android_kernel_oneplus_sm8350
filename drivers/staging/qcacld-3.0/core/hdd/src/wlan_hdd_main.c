@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -12232,6 +12232,16 @@ int hdd_psoc_idle_shutdown(struct device *dev)
 		return -EINVAL;
 	}
 
+	/*
+	 * This is to handle scenario in which platform driver triggers
+	 * idle_shutdown if Deep Sleep/Hibernate entry notification is
+	 * received from modem subsystem in wearable devices
+	 */
+	if (hdd_is_any_interface_open(hdd_ctx)) {
+		hdd_err_rl("all interfaces are not down, ignore idle shutdown");
+		return -EINVAL;
+	}
+
 	if (is_mode_change_psoc_idle_shutdown)
 		ret = __hdd_mode_change_psoc_idle_shutdown(hdd_ctx);
 	else
@@ -13983,6 +13993,31 @@ static void hdd_thermal_stats_cmd_init(struct hdd_context *hdd_ctx)
 }
 #endif
 
+#ifdef WLAN_FEATURE_CAL_FAILURE_TRIGGER
+/**
+ * hdd_cal_fail_send_event()- send calibration failure information
+ * @cal_type: calibration type
+ * @reason: reason for calibration failure
+ *
+ * This Function sends calibration failure diag event
+ *
+ * Return: void.
+ */
+static void hdd_cal_fail_send_event(uint8_t cal_type, uint8_t reason)
+{
+	/*
+	 * For now we are going with the print. Once CST APK has support to
+	 * read the diag events then we will add the diag event here.
+	 */
+	hdd_debug("Received cal failure event with cal_type:%x reason:%x",
+		  cal_type, reason);
+}
+#else
+static inline void hdd_cal_fail_send_event(uint8_t cal_type, uint8_t reason)
+{
+}
+#endif
+
 /**
  * hdd_features_init() - Init features
  * @hdd_ctx:	HDD context
@@ -14098,6 +14133,8 @@ static int hdd_features_init(struct hdd_context *hdd_ctx)
 					       ALLOWED_KEYMGMT_6G_MASK);
 	}
 	hdd_thermal_stats_cmd_init(hdd_ctx);
+	sme_set_cal_failure_event_cb(hdd_ctx->mac_handle,
+				     hdd_cal_fail_send_event);
 
 	hdd_exit();
 	return 0;
@@ -16274,7 +16311,7 @@ void wlan_hdd_start_sap(struct hdd_adapter *ap_adapter, bool reinit)
 		goto end;
 
 	hdd_debug("Waiting for SAP to start");
-	qdf_status = qdf_wait_for_event_completion(&hostapd_state->qdf_event,
+	qdf_status = qdf_wait_single_event(&hostapd_state->qdf_event,
 					SME_CMD_START_BSS_TIMEOUT);
 	if (!QDF_IS_STATUS_SUCCESS(qdf_status)) {
 		hdd_err("SAP Start failed");
@@ -18506,7 +18543,7 @@ void hdd_restart_sap(struct hdd_adapter *ap_adapter)
 
 		hdd_info("Waiting for SAP to start");
 		qdf_status =
-			qdf_wait_for_event_completion(&hostapd_state->qdf_event,
+			qdf_wait_single_event(&hostapd_state->qdf_event,
 					SME_CMD_START_BSS_TIMEOUT);
 		wlansap_reset_sap_config_add_ie(sap_config,
 				eUPDATE_IE_ALL);
